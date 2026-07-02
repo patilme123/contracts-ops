@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ContractStatus {
+  DRAFT
+  FINALIZED
+  ARCHIVED
+}
+
+enum ContractEventType {
+  CREATED
+  UPDATED
+  FINALIZED
+  ARCHIVED
+  DELETED
+}
+
+model Organisation {
+  id             String          @id @default(uuid()) @db.Uuid
+  name           String
+  slug           String          @unique
+  contracts      Contract[]
+  contractEvents ContractEvent[]
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  @@map("organisations")
+}
+
+model Contract {
+  id             String          @id @default(uuid()) @db.Uuid
+  organisationId String          @map("organisation_id") @db.Uuid
+  contractNumber String          @map("contract_number")
+  status         ContractStatus  @default(DRAFT)
+  clientName     String          @map("client_name")
+  poRefNo        String          @map("po_ref_no")
+  poDate         DateTime        @map("po_date")
+  fieldData      Json            @map("field_data")
+  deletedAt      DateTime?       @map("deleted_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  organisation   Organisation    @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  events         ContractEvent[]
+
+  @@unique([organisationId, contractNumber])
+  @@index([organisationId, status])
+  @@index([organisationId, clientName])
+  @@index([organisationId, id])
+  @@index([organisationId, poRefNo])
+  @@map("contracts")
+}
+
+model ContractEvent {
+  id             String             @id @default(uuid()) @db.Uuid
+  organisationId String             @map("organisation_id") @db.Uuid
+  contractId     String             @map("contract_id") @db.Uuid
+  eventType      ContractEventType  @map("event_type")
+  previousStatus ContractStatus?    @map("previous_status")
+  nextStatus     ContractStatus?    @map("next_status")
+  summary        String
+  metadata       Json?
+  createdAt      DateTime           @default(now()) @map("created_at")
+
+  organisation   Organisation       @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  contract       Contract           @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([organisationId, contractId, createdAt])
+  @@map("contract_events")
+}
