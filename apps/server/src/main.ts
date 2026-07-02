@@ -1,6 +1,6 @@
 import { createApp } from "./app";
 import { env } from "./config/env";
-import { prisma } from "./database/prisma";
+import { prisma } from "@contract-console/database";
 
 const app = createApp();
 

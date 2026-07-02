@@ -20,6 +20,7 @@ apps/
   web/       Next.js application
   server/    Express API server
 packages/
+  database/  Prisma schema, Prisma client export, and database seed
   shared/    Shared schemas, status constants, and API types
 ```
 
@@ -46,14 +47,14 @@ docker compose up -d
 Generate Prisma client and run migrations:
 
 ```bash
-pnpm --filter @contract-console/server db:generate
-pnpm --filter @contract-console/server db:migrate
+pnpm db:generate
+pnpm db:migrate
 ```
 
 Seed local data:
 
 ```bash
-pnpm --filter @contract-console/server db:seed
+pnpm db:seed
 ```
 
 Start both apps:
@@ -85,7 +86,7 @@ DIRECT_URL=postgresql://contract_console:contract_console@localhost:5432/contrac
 NEXT_PUBLIC_API_URL=http://localhost:4000/api
 ```
 
-For Neon PostgreSQL, use the pooled Neon connection string for `DATABASE_URL` and the direct connection string for `DIRECT_URL`.
+For Neon PostgreSQL, use the pooled Neon connection string for `DATABASE_URL` and the direct connection string for `DIRECT_URL`. Keep real Neon credentials in `.env`; do not commit them.
 
 ## API Shape
 
@@ -137,6 +138,8 @@ pageSize=10
 ```
 
 ## Data Model
+
+The Prisma schema, seed script, and exported Prisma client live in `packages/database`.
 
 Core tables:
 

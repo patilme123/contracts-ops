@@ -2,11 +2,11 @@ import { PrismaClient } from "@prisma/client";
 
 declare global {
   // eslint-disable-next-line no-var
-  var prismaClient: PrismaClient | undefined;
+  var contractConsolePrisma: PrismaClient | undefined;
 }
 
 export const prisma =
-  global.prismaClient ??
+  global.contractConsolePrisma ??
   new PrismaClient({
     log:
       process.env.NODE_ENV === "development"
@@ -15,5 +15,5 @@ export const prisma =
   });
 
 if (process.env.NODE_ENV !== "production") {
-  global.prismaClient = prisma;
+  global.contractConsolePrisma = prisma;
 }

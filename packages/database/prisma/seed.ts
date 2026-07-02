@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { ContractEventType, ContractStatus, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
