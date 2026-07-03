@@ -1,14 +1,14 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 type RequestOptions = RequestInit & {
-  query?: Record<string, string | number | undefined>;
+  query?: Record<string, string | number | undefined | null>;
 };
 
 function buildUrl(path: string, query?: RequestOptions["query"]) {
   const url = new URL(`${API_BASE_URL}${path}`);
 
   for (const [key, value] of Object.entries(query ?? {})) {
-    if (value !== undefined && value !== "") {
+    if (value !== undefined && value !== null && value !== "") {
       url.searchParams.set(key, String(value));
     }
   }
@@ -31,6 +31,10 @@ export async function apiClient<T>(path: string, options: RequestOptions = {}) {
     }));
 
     throw new Error(error.message ?? "Request failed");
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;

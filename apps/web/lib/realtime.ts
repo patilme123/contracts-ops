@@ -4,12 +4,24 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/a
 
 export function subscribeToContractEvents(
   organisationId: string,
-  onStatusChanged: (event: ContractStatusChangedEvent) => void
+  handlers: {
+    onOpen?: () => void;
+    onError?: () => void;
+    onStatusChanged: (event: ContractStatusChangedEvent) => void;
+  }
 ) {
   const source = new EventSource(`${API_BASE_URL}/organisations/${organisationId}/realtime/contracts`);
 
+  source.onopen = () => {
+    handlers.onOpen?.();
+  };
+
+  source.onerror = () => {
+    handlers.onError?.();
+  };
+
   source.addEventListener("contract-status-changed", (message) => {
-    onStatusChanged(JSON.parse(message.data) as ContractStatusChangedEvent);
+    handlers.onStatusChanged(JSON.parse(message.data) as ContractStatusChangedEvent);
   });
 
   return () => {

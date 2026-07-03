@@ -1,77 +1,105 @@
+"use client";
+
+import { useOrganisationContext } from "@/components/app-shell/organisation-provider";
 import { Badge, getStatusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { UploadJsonButton } from "@/components/upload/upload-json-button";
-import type { ContractStatus } from "@contract-console/shared";
+import { listContracts, type ContractListParams } from "@/lib/api";
+import { formatDate, formatRelativeLabel } from "@/lib/formatters";
+import { queryKeys } from "@/lib/query-keys";
+import type { ContractStatus, ContractSummary } from "@contract-console/shared";
+import { useQuery } from "@tanstack/react-query";
 import { Archive, CheckCircle2, FileText, Search, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
-const statusFilters = ["All", "Draft", "Finalized", "Archived"];
+const statusFilters: Array<"ALL" | ContractStatus> = ["ALL", "DRAFT", "FINALIZED", "ARCHIVED"];
 
-const contracts: Array<{
-  id: string;
-  contractNumber: string;
-  clientName: string;
-  poRefNo: string;
-  poDate: string;
-  status: ContractStatus;
-  updatedAt: string;
-}> = [
-  {
-    id: "CON-0001",
-    contractNumber: "CON-0001",
-    clientName: "Apex Manufacturing",
-    poRefNo: "PO-2026-1001",
-    poDate: "Jan 15, 2026",
-    status: "DRAFT",
-    updatedAt: "Today, 10:15 AM"
-  },
-  {
-    id: "CON-0002",
-    contractNumber: "CON-0002",
-    clientName: "Vertex Retail Group",
-    poRefNo: "PO-2026-1018",
-    poDate: "Feb 2, 2026",
-    status: "FINALIZED",
-    updatedAt: "Yesterday, 4:30 PM"
-  },
-  {
-    id: "CON-0003",
-    contractNumber: "CON-0003",
-    clientName: "Blue Harbor Imports",
-    poRefNo: "PO-2025-0884",
-    poDate: "Nov 21, 2025",
-    status: "ARCHIVED",
-    updatedAt: "May 12, 2026"
-  }
-];
-
-const totals = [
-  {
-    label: "Draft",
-    value: "2",
-    icon: FileText
-  },
-  {
-    label: "Finalized",
-    value: "2",
-    icon: CheckCircle2
-  },
-  {
-    label: "Archived",
-    value: "1",
-    icon: Archive
-  }
-];
+function buildStats(contracts: ContractSummary[]) {
+  return [
+    {
+      label: "Draft",
+      value: String(contracts.filter((contract) => contract.status === "DRAFT").length),
+      icon: FileText
+    },
+    {
+      label: "Finalized",
+      value: String(contracts.filter((contract) => contract.status === "FINALIZED").length),
+      icon: CheckCircle2
+    },
+    {
+      label: "Archived",
+      value: String(contracts.filter((contract) => contract.status === "ARCHIVED").length),
+      icon: Archive
+    }
+  ];
+}
 
 export function ContractsOverview() {
+  const { selectedOrganisationId, selectedOrganisation, isLoadingOrganisations } =
+    useOrganisationContext();
+  const [status, setStatus] = useState<"ALL" | ContractStatus>("ALL");
+  const [clientName, setClientName] = useState("");
+  const [contractId, setContractId] = useState("");
+  const [page, setPage] = useState(1);
+
+  const filters = useMemo<ContractListParams>(
+    () => ({
+      status: status === "ALL" ? undefined : status,
+      clientName: clientName.trim() || undefined,
+      contractId: contractId.trim() || undefined,
+      page,
+      pageSize: 10
+    }),
+    [clientName, contractId, page, status]
+  );
+
+  const contractsQuery = useQuery({
+    queryKey: selectedOrganisationId
+      ? queryKeys.contracts(selectedOrganisationId, filters)
+      : ["contracts", "empty"],
+    queryFn: async () => {
+      if (!selectedOrganisationId) {
+        throw new Error("No organisation selected");
+      }
+
+      return listContracts(selectedOrganisationId, filters);
+    },
+    enabled: Boolean(selectedOrganisationId)
+  });
+
+  const statsQuery = useQuery({
+    queryKey: selectedOrganisationId
+      ? queryKeys.contractStats(selectedOrganisationId)
+      : ["contract-stats", "empty"],
+    queryFn: async () => {
+      if (!selectedOrganisationId) {
+        throw new Error("No organisation selected");
+      }
+
+      return listContracts(selectedOrganisationId, {
+        page: 1,
+        pageSize: 50
+      });
+    },
+    enabled: Boolean(selectedOrganisationId)
+  });
+
+  const contracts = contractsQuery.data?.data ?? [];
+  const pagination = contractsQuery.data?.pagination;
+  const totals = buildStats(statsQuery.data?.data ?? []);
+  const isLoading = isLoadingOrganisations || contractsQuery.isLoading;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-normal">Contracts</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Manage organisation-scoped contract intake, workflow status, and audit history.
+            {selectedOrganisation
+              ? `Manage contract intake, workflow status, and audit history for ${selectedOrganisation.name}.`
+              : "Select an organisation to manage contract intake and workflow status."}
           </p>
         </div>
         <UploadJsonButton />
@@ -103,7 +131,24 @@ export function ContractsOverview() {
             <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-input bg-card px-3">
               <Search className="size-4 shrink-0 text-muted-foreground" />
               <input
-                placeholder="Search by client or contract ID"
+                value={clientName}
+                onChange={(event) => {
+                  setClientName(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search client name"
+                className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+            <div className="flex min-w-0 items-center gap-2 rounded-md border border-input bg-card px-3 lg:w-56">
+              <FileText className="size-4 shrink-0 text-muted-foreground" />
+              <input
+                value={contractId}
+                onChange={(event) => {
+                  setContractId(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Contract ID"
                 className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>
@@ -118,10 +163,14 @@ export function ContractsOverview() {
                   <button
                     key={filter}
                     className="h-8 rounded px-3 text-sm font-medium text-muted-foreground transition hover:bg-card hover:text-foreground data-[active=true]:bg-card data-[active=true]:text-foreground data-[active=true]:shadow-sm"
-                    data-active={filter === "All"}
+                    data-active={filter === status}
                     type="button"
+                    onClick={() => {
+                      setStatus(filter);
+                      setPage(1);
+                    }}
                   >
-                    {filter}
+                    {filter === "ALL" ? "All" : filter}
                   </button>
                 ))}
               </div>
@@ -141,7 +190,21 @@ export function ContractsOverview() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-card">
-                {contracts.map((contract) => (
+                {isLoading ? (
+                  <tr>
+                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={6}>
+                      Loading contracts
+                    </td>
+                  </tr>
+                ) : null}
+                {!isLoading && contracts.length === 0 ? (
+                  <tr>
+                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={6}>
+                      No contracts match the current filters.
+                    </td>
+                  </tr>
+                ) : null}
+                {!isLoading && contracts.map((contract) => (
                   <tr key={contract.id} className="transition hover:bg-muted/50">
                     <td className="px-4 py-4 font-semibold">
                       <Link href={`/contracts/${contract.id}`} className="text-primary hover:underline">
@@ -150,11 +213,11 @@ export function ContractsOverview() {
                     </td>
                     <td className="px-4 py-4">{contract.clientName}</td>
                     <td className="px-4 py-4 text-muted-foreground">{contract.poRefNo}</td>
-                    <td className="px-4 py-4 text-muted-foreground">{contract.poDate}</td>
+                    <td className="px-4 py-4 text-muted-foreground">{formatDate(contract.poDate)}</td>
                     <td className="px-4 py-4">
                       <Badge tone={getStatusTone(contract.status)}>{contract.status}</Badge>
                     </td>
-                    <td className="px-4 py-4 text-muted-foreground">{contract.updatedAt}</td>
+                    <td className="px-4 py-4 text-muted-foreground">{formatRelativeLabel(contract.updatedAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -162,12 +225,26 @@ export function ContractsOverview() {
           </div>
 
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Showing 1-3 of 5 contracts</span>
+            <span>
+              {pagination
+                ? `Showing ${contracts.length} of ${pagination.total} contracts`
+                : "No contract data loaded"}
+            </span>
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!pagination || pagination.page <= 1}
+                onClick={() => setPage((currentPage) => Math.max(currentPage - 1, 1))}
+              >
                 Previous
               </Button>
-              <Button variant="secondary" size="sm">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!pagination || pagination.page >= pagination.totalPages}
+                onClick={() => setPage((currentPage) => currentPage + 1)}
+              >
                 Next
               </Button>
             </div>
