@@ -1,4 +1,7 @@
 import { prisma, type Prisma } from "@contract-console/database";
+import type { ContractPayload } from "@contract-console/shared";
+
+type DbClient = typeof prisma | Prisma.TransactionClient;
 
 type ListContractsInput = {
   organisationId: string;
@@ -29,10 +32,7 @@ function buildContractWhere(input: ListContractsInput): Prisma.ContractWhereInpu
   }
 
   if (typeof input.query.contractId === "string" && input.query.contractId.length > 0) {
-    where.OR = [
-      {
-        id: input.query.contractId
-      },
+    const contractSearch: Prisma.ContractWhereInput[] = [
       {
         contractNumber: {
           contains: input.query.contractId,
@@ -40,12 +40,104 @@ function buildContractWhere(input: ListContractsInput): Prisma.ContractWhereInpu
         }
       }
     ];
+
+    if (isUuid(input.query.contractId)) {
+      contractSearch.unshift({
+        id: input.query.contractId
+      });
+    }
+
+    where.OR = contractSearch;
   }
 
   return where;
 }
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  );
+}
+
+function toContractSummary(contract: {
+  id: string;
+  organisationId: string;
+  contractNumber: string;
+  status: string;
+  clientName: string;
+  poRefNo: string;
+  poDate: Date;
+  updatedAt: Date;
+}) {
+  return {
+    ...contract,
+    poDate: contract.poDate.toISOString().slice(0, 10),
+    updatedAt: contract.updatedAt.toISOString()
+  };
+}
+
+function toContractDetail(contract: {
+  id: string;
+  organisationId: string;
+  contractNumber: string;
+  status: string;
+  clientName: string;
+  poRefNo: string;
+  poDate: Date;
+  fieldData: Prisma.JsonValue;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    ...contract,
+    poDate: contract.poDate.toISOString().slice(0, 10),
+    createdAt: contract.createdAt.toISOString(),
+    updatedAt: contract.updatedAt.toISOString()
+  };
+}
+
+function buildContractLookup(organisationId: string, contractId: string): Prisma.ContractWhereInput {
+  const lookup: Prisma.ContractWhereInput = {
+    organisationId,
+    deletedAt: null,
+    OR: [
+      {
+        contractNumber: contractId
+      }
+    ]
+  };
+
+  if (isUuid(contractId)) {
+    lookup.OR?.unshift({
+      id: contractId
+    });
+  }
+
+  return lookup;
+}
+
 export const contractsRepository = {
+  organisationExists(organisationId: string, db: DbClient = prisma) {
+    return db.organisation.findFirst({
+      where: {
+        id: organisationId
+      },
+      select: {
+        id: true
+      }
+    });
+  },
+
+  async getNextContractNumber(organisationId: string, db: DbClient = prisma) {
+    const count = await db.contract.count({
+      where: {
+        organisationId
+      }
+    });
+
+    return `CON-${String(count + 1).padStart(4, "0")}`;
+  },
+
   async listByOrganisation(input: ListContractsInput) {
     const where = buildContractWhere(input);
 
@@ -72,11 +164,7 @@ export const contractsRepository = {
     ]);
 
     return {
-      data: contracts.map((contract) => ({
-        ...contract,
-        poDate: contract.poDate.toISOString().slice(0, 10),
-        updatedAt: contract.updatedAt.toISOString()
-      })),
+      data: contracts.map(toContractSummary),
       pagination: {
         page: input.pagination.page,
         pageSize: input.pagination.pageSize,
@@ -88,29 +176,79 @@ export const contractsRepository = {
 
   async findById(organisationId: string, contractId: string) {
     const contract = await prisma.contract.findFirst({
-      where: {
-        organisationId,
-        deletedAt: null,
-        OR: [
-          {
-            id: contractId
-          },
-          {
-            contractNumber: contractId
-          }
-        ]
-      }
+      where: buildContractLookup(organisationId, contractId)
     });
 
     if (!contract) {
       return null;
     }
 
-    return {
-      ...contract,
-      poDate: contract.poDate.toISOString().slice(0, 10),
-      createdAt: contract.createdAt.toISOString(),
-      updatedAt: contract.updatedAt.toISOString()
-    };
+    return toContractDetail(contract);
+  },
+
+  findRawById(organisationId: string, contractId: string, db: DbClient = prisma) {
+    return db.contract.findFirst({
+      where: buildContractLookup(organisationId, contractId)
+    });
+  },
+
+  async createContract(
+    organisationId: string,
+    contractNumber: string,
+    payload: ContractPayload,
+    db: DbClient = prisma
+  ) {
+    const contract = await db.contract.create({
+      data: {
+        organisationId,
+        contractNumber,
+        clientName: payload.client_name,
+        poRefNo: payload.po_ref_no,
+        poDate: new Date(`${payload.po_date}T00:00:00.000Z`),
+        fieldData: payload
+      }
+    });
+
+    return toContractDetail(contract);
+  },
+
+  async updatePayload(contractId: string, payload: ContractPayload, db: DbClient = prisma) {
+    const contract = await db.contract.update({
+      where: {
+        id: contractId
+      },
+      data: {
+        clientName: payload.client_name,
+        poRefNo: payload.po_ref_no,
+        poDate: new Date(`${payload.po_date}T00:00:00.000Z`),
+        fieldData: payload
+      }
+    });
+
+    return toContractDetail(contract);
+  },
+
+  async updateStatus(contractId: string, status: "FINALIZED" | "ARCHIVED", db: DbClient = prisma) {
+    const contract = await db.contract.update({
+      where: {
+        id: contractId
+      },
+      data: {
+        status
+      }
+    });
+
+    return toContractDetail(contract);
+  },
+
+  softDelete(contractId: string, db: DbClient = prisma) {
+    return db.contract.update({
+      where: {
+        id: contractId
+      },
+      data: {
+        deletedAt: new Date()
+      }
+    });
   }
 };
