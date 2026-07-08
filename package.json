@@ -11,6 +11,7 @@
     "db:seed": "tsx packages/database/prisma/seed.ts",
     "dev": "pnpm --parallel --filter @contract-console/server --filter @contract-console/web dev",
     "lint": "pnpm -r lint",
+    "test": "pnpm --filter @contract-console/server test",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
