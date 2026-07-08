@@ -1,0 +1,372 @@
+openapi: 3.1.0
+info:
+  title: Contract Operations Console API
+  version: 0.1.0
+servers:
+  - url: http://localhost:4000/api
+paths:
+  /organisations:
+    get:
+      summary: List organisations
+      responses:
+        "200":
+          description: Organisations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganisationListResponse"
+  /organisations/{organisationId}/contracts:
+    get:
+      summary: Search contracts for an organisation
+      parameters:
+        - $ref: "#/components/parameters/OrganisationId"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ContractStatus"
+        - name: clientName
+          in: query
+          schema:
+            type: string
+        - name: contractId
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        "200":
+          description: Paginated contracts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractPageResponse"
+    post:
+      summary: Create a draft contract from JSON
+      parameters:
+        - $ref: "#/components/parameters/OrganisationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractPayload"
+      responses:
+        "201":
+          description: Created contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /organisations/{organisationId}/contracts/{contractId}:
+    get:
+      summary: Get contract detail
+      parameters:
+        - $ref: "#/components/parameters/OrganisationId"
+        - $ref: "#/components/parameters/ContractId"
+      responses:
+        "200":
+          description: Contract detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update a draft contract
+      parameters:
+        - $ref: "#/components/parameters/OrganisationId"
+        - $ref: "#/components/parameters/ContractId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractPayload"
+      responses:
+        "200":
+          description: Updated contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      summary: Soft-delete a draft contract
+      parameters:
+        - $ref: "#/components/parameters/OrganisationId"
+        - $ref: "#/components/parameters/ContractId"
+      responses:
+        "204":
+          description: Deleted
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /organisations/{organisationId}/contracts/{contractId}/finalize:
+    post:
+      summary: Finalize a draft contract
+      parameters:
+        - $ref: "#/components/parameters/OrganisationId"
+        - $ref: "#/components/parameters/ContractId"
+      responses:
+        "200":
+          description: Finalized contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /organisations/{organisationId}/contracts/{contractId}/archive:
+    post:
+      summary: Archive a finalized contract
+      parameters:
+        - $ref: "#/components/parameters/OrganisationId"
+        - $ref: "#/components/parameters/ContractId"
+      responses:
+        "200":
+          description: Archived contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /organisations/{organisationId}/contracts/{contractId}/events:
+    get:
+      summary: List contract audit events
+      parameters:
+        - $ref: "#/components/parameters/OrganisationId"
+        - $ref: "#/components/parameters/ContractId"
+      responses:
+        "200":
+          description: Contract events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractEventsResponse"
+  /organisations/{organisationId}/realtime/contracts:
+    get:
+      summary: Subscribe to contract status updates over SSE
+      parameters:
+        - $ref: "#/components/parameters/OrganisationId"
+      responses:
+        "200":
+          description: text/event-stream connection
+          content:
+            text/event-stream:
+              schema:
+                type: string
+components:
+  parameters:
+    OrganisationId:
+      name: organisationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ContractId:
+      name: contractId
+      in: path
+      required: true
+      schema:
+        type: string
+        description: Contract UUID or contract number
+  responses:
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: Invalid contract workflow operation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found in selected organisation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    ContractStatus:
+      type: string
+      enum: [DRAFT, FINALIZED, ARCHIVED]
+    Organisation:
+      type: object
+      required: [id, name, slug]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+    ContractSummary:
+      type: object
+      required: [id, organisationId, contractNumber, status, clientName, poRefNo, poDate, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organisationId:
+          type: string
+          format: uuid
+        contractNumber:
+          type: string
+        status:
+          $ref: "#/components/schemas/ContractStatus"
+        clientName:
+          type: string
+        poRefNo:
+          type: string
+        poDate:
+          type: string
+          format: date
+        updatedAt:
+          type: string
+          format: date-time
+    ContractDetail:
+      allOf:
+        - $ref: "#/components/schemas/ContractSummary"
+        - type: object
+          required: [fieldData, createdAt]
+          properties:
+            fieldData:
+              $ref: "#/components/schemas/ContractPayload"
+            createdAt:
+              type: string
+              format: date-time
+    ContractPayload:
+      type: object
+      required: [client_name, po_ref_no, po_date, items]
+      properties:
+        client_name:
+          type: string
+        po_ref_no:
+          type: string
+        po_date:
+          type: string
+          format: date
+        payment_terms:
+          type: string
+        delivery_terms:
+          type: string
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [description, quantity, unit_price]
+            properties:
+              description:
+                type: string
+              quantity:
+                type: number
+                exclusiveMinimum: 0
+              quantity_unit:
+                type: string
+              unit_price:
+                type: number
+                minimum: 0
+              pricing_unit:
+                type: string
+              total:
+                type: number
+    ContractEvent:
+      type: object
+      required: [id, contractId, eventType, summary, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        contractId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum: [CREATED, UPDATED, FINALIZED, ARCHIVED, DELETED]
+        previousStatus:
+          oneOf:
+            - $ref: "#/components/schemas/ContractStatus"
+            - type: "null"
+        nextStatus:
+          oneOf:
+            - $ref: "#/components/schemas/ContractStatus"
+            - type: "null"
+        summary:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    OrganisationListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Organisation"
+    ContractResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/ContractDetail"
+    ContractPageResponse:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContractSummary"
+        pagination:
+          type: object
+          required: [page, pageSize, total, totalPages]
+          properties:
+            page:
+              type: integer
+            pageSize:
+              type: integer
+            total:
+              type: integer
+            totalPages:
+              type: integer
+    ContractEventsResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContractEvent"
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        fieldErrors:
+          type: object

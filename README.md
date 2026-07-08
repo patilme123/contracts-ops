@@ -90,7 +90,9 @@ For Neon PostgreSQL, use the pooled Neon connection string for `DATABASE_URL` an
 
 ## API Shape
 
-Planned endpoints:
+OpenAPI documentation is available at `docs/openapi.yaml`.
+
+Implemented endpoints:
 
 ```text
 GET    /api/organisations
@@ -167,6 +169,10 @@ Primary path:
 - Deploy `apps/server` to Railway.
 - Use Neon PostgreSQL for production.
 
+Railway can use the root `railway.json` service config.
+
+For Vercel, set the project root to `apps/web`; the app includes `apps/web/vercel.json`.
+
 Railway variables:
 
 ```text
@@ -183,6 +189,33 @@ Vercel variables:
 NEXT_PUBLIC_API_URL=https://your-railway-server.up.railway.app/api
 ```
 
+After deploying the backend, apply migrations and seed production data:
+
+```bash
+pnpm db:deploy
+pnpm db:seed
+```
+
+## Evaluation Guide
+
+Use this flow to evaluate the required assignment behavior:
+
+1. Select an organisation from the top-right selector.
+2. Search/filter contracts by status, client name, or contract ID.
+3. Upload a valid contract JSON; it appears as `DRAFT`.
+4. Open a draft contract, edit JSON, and save it.
+5. Finalize the draft contract.
+6. Open another browser tab and confirm status changes refresh through SSE.
+7. Archive a finalized contract.
+8. Confirm audit events appear on the contract detail page.
+
+## Verification
+
+```bash
+pnpm test
+pnpm build
+```
+
 AWS EC2 alternative:
 
 - Install Node.js LTS and pnpm.
@@ -191,8 +224,23 @@ AWS EC2 alternative:
 - Put Nginx and HTTPS in front of Express.
 - Keep Neon as the database.
 
-## Current Milestone
+## Current Status
 
-This first commit sets up the monorepo foundation, UI shell, API shell, shared schemas, Prisma schema, seed scaffold, and documentation.
+Completed:
 
-The next milestone should implement full organisation-scoped CRUD, workflow transitions, audit writes, frontend data loading, and backend tests.
+- Organisation-scoped contracts API
+- JSON validation
+- Search, filters, and pagination
+- Draft-only updates and deletes
+- `DRAFT -> FINALIZED -> ARCHIVED` workflow
+- Audit events
+- SSE status broadcasts
+- Next.js dashboard/detail/upload UI
+- Neon migration and seed data
+- Backend workflow tests
+
+Pending for final submission:
+
+- Deployed frontend URL
+- Deployed backend URL
+- Any evaluator access notes
