@@ -71,6 +71,18 @@ paths:
                 $ref: "#/components/schemas/ContractResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+  /organisations/{organisationId}/contracts/stats:
+    get:
+      summary: Count active contracts by workflow status
+      parameters:
+        - $ref: "#/components/parameters/OrganisationId"
+      responses:
+        "200":
+          description: Contract status counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractStatsResponse"
   /organisations/{organisationId}/contracts/{contractId}:
     get:
       summary: Get contract detail
@@ -256,6 +268,18 @@ components:
             createdAt:
               type: string
               format: date-time
+    ContractStats:
+      type: object
+      required: [total, draft, finalized, archived]
+      properties:
+        total:
+          type: integer
+        draft:
+          type: integer
+        finalized:
+          type: integer
+        archived:
+          type: integer
     ContractPayload:
       type: object
       required: [client_name, po_ref_no, po_date, items]
@@ -332,6 +356,12 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/ContractDetail"
+    ContractStatsResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/ContractStats"
     ContractPageResponse:
       type: object
       required: [data, pagination]

@@ -46,6 +46,10 @@ export const contractsService = {
     });
   },
 
+  async getStats(organisationId: string) {
+    return contractsRepository.countByStatus(organisationId);
+  },
+
   async createContract(organisationId: string, body: unknown) {
     const payload = contractPayloadSchema.parse(body);
 

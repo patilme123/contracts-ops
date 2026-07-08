@@ -6,6 +6,7 @@ import {
   deleteContract,
   finalizeContract,
   getContract,
+  getContractStats,
   listContractEvents,
   listContracts,
   updateContract
@@ -29,6 +30,11 @@ contractsRouter.post(
   "/",
   validateRequest({ params: organisationParamsSchema, body: createContractSchema }),
   createContract
+);
+contractsRouter.get(
+  "/stats",
+  validateRequest({ params: organisationParamsSchema }),
+  getContractStats
 );
 contractsRouter.get("/:contractId", validateRequest({ params: contractParamsSchema }), getContract);
 contractsRouter.patch(

@@ -5,10 +5,10 @@ import { Badge, getStatusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { UploadJsonButton } from "@/components/upload/upload-json-button";
-import { listContracts, type ContractListParams } from "@/lib/api";
+import { getContractStats, listContracts, type ContractListParams } from "@/lib/api";
 import { formatDate, formatRelativeLabel } from "@/lib/formatters";
 import { queryKeys } from "@/lib/query-keys";
-import type { ContractStatus, ContractSummary } from "@contract-console/shared";
+import type { ContractStats, ContractStatus } from "@contract-console/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Archive, CheckCircle2, FileText, Search, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
@@ -16,21 +16,21 @@ import { useMemo, useState } from "react";
 
 const statusFilters: Array<"ALL" | ContractStatus> = ["ALL", "DRAFT", "FINALIZED", "ARCHIVED"];
 
-function buildStats(contracts: ContractSummary[]) {
+function buildStats(stats?: ContractStats) {
   return [
     {
       label: "Draft",
-      value: String(contracts.filter((contract) => contract.status === "DRAFT").length),
+      value: String(stats?.draft ?? 0),
       icon: FileText
     },
     {
       label: "Finalized",
-      value: String(contracts.filter((contract) => contract.status === "FINALIZED").length),
+      value: String(stats?.finalized ?? 0),
       icon: CheckCircle2
     },
     {
       label: "Archived",
-      value: String(contracts.filter((contract) => contract.status === "ARCHIVED").length),
+      value: String(stats?.archived ?? 0),
       icon: Archive
     }
   ];
@@ -78,17 +78,14 @@ export function ContractsOverview() {
         throw new Error("No organisation selected");
       }
 
-      return listContracts(selectedOrganisationId, {
-        page: 1,
-        pageSize: 50
-      });
+      return (await getContractStats(selectedOrganisationId)).data;
     },
     enabled: Boolean(selectedOrganisationId)
   });
 
   const contracts = contractsQuery.data?.data ?? [];
   const pagination = contractsQuery.data?.pagination;
-  const totals = buildStats(statsQuery.data?.data ?? []);
+  const totals = buildStats(statsQuery.data);
   const isLoading = isLoadingOrganisations || contractsQuery.isLoading;
 
   return (

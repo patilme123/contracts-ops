@@ -3,6 +3,7 @@ import type {
   ContractDetail,
   ContractEvent,
   ContractPayload,
+  ContractStats,
   ContractStatus,
   ContractSummary,
   OrganisationSummary,
@@ -29,6 +30,10 @@ export function listContracts(organisationId: string, params: ContractListParams
       query: params
     }
   );
+}
+
+export function getContractStats(organisationId: string) {
+  return apiClient<ApiResponse<ContractStats>>(`/organisations/${organisationId}/contracts/stats`);
 }
 
 export function createContract(organisationId: string, payload: ContractPayload) {

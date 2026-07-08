@@ -26,6 +26,16 @@ export const listContracts: RequestHandler = async (request, response, next) => 
   }
 };
 
+export const getContractStats: RequestHandler = async (request, response, next) => {
+  try {
+    const organisationId = readParam(request.params, "organisationId");
+    const stats = await contractsService.getStats(organisationId);
+    response.status(200).json({ data: stats });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createContract: RequestHandler = async (request, response, next) => {
   try {
     const organisationId = readParam(request.params, "organisationId");

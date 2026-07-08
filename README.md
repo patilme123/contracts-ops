@@ -98,6 +98,7 @@ Implemented endpoints:
 GET    /api/organisations
 GET    /api/organisations/:organisationId/contracts
 POST   /api/organisations/:organisationId/contracts
+GET    /api/organisations/:organisationId/contracts/stats
 GET    /api/organisations/:organisationId/contracts/:contractId
 PATCH  /api/organisations/:organisationId/contracts/:contractId
 POST   /api/organisations/:organisationId/contracts/:contractId/finalize

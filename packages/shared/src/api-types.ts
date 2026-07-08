@@ -38,6 +38,13 @@ export type ContractSummary = {
   updatedAt: string;
 };
 
+export type ContractStats = {
+  total: number;
+  draft: number;
+  finalized: number;
+  archived: number;
+};
+
 export type ContractDetail = ContractSummary & {
   fieldData: ContractPayload;
   createdAt: string;

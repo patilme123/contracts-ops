@@ -174,6 +174,46 @@ export const contractsRepository = {
     };
   },
 
+  async countByStatus(organisationId: string) {
+    const counts = await prisma.contract.groupBy({
+      by: ["status"],
+      where: {
+        organisationId,
+        deletedAt: null
+      },
+      _count: {
+        status: true
+      }
+    });
+
+    return counts.reduce(
+      (stats, row) => {
+        const count = row._count.status;
+        stats.total += count;
+
+        if (row.status === "DRAFT") {
+          stats.draft = count;
+        }
+
+        if (row.status === "FINALIZED") {
+          stats.finalized = count;
+        }
+
+        if (row.status === "ARCHIVED") {
+          stats.archived = count;
+        }
+
+        return stats;
+      },
+      {
+        total: 0,
+        draft: 0,
+        finalized: 0,
+        archived: 0
+      }
+    );
+  },
+
   async findById(organisationId: string, contractId: string) {
     const contract = await prisma.contract.findFirst({
       where: buildContractLookup(organisationId, contractId)
