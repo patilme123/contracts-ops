@@ -3,6 +3,17 @@ import { ContractEventType, ContractStatus, PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient();
 
+const organisations = [
+  {
+    name: "Northstar Logistics",
+    slug: "northstar-logistics"
+  },
+  {
+    name: "Atlas Procurement",
+    slug: "atlas-procurement"
+  }
+];
+
 const contracts = [
   {
     orgSlug: "northstar-logistics",
@@ -112,28 +123,68 @@ const contracts = [
   }
 ];
 
-async function main() {
-  await prisma.contractEvent.deleteMany();
-  await prisma.contract.deleteMany();
-  await prisma.organisation.deleteMany();
+async function createSeedEvents(input: {
+  organisationId: string;
+  contractId: string;
+  status: ContractStatus;
+}) {
+  await prisma.contractEvent.create({
+    data: {
+      organisationId: input.organisationId,
+      contractId: input.contractId,
+      eventType: ContractEventType.CREATED,
+      nextStatus: ContractStatus.DRAFT,
+      summary: "Contract created from seed data",
+      metadata: { seeded: true }
+    }
+  });
 
-  const organisations = await Promise.all([
-    prisma.organisation.create({
+  if (input.status === ContractStatus.FINALIZED || input.status === ContractStatus.ARCHIVED) {
+    await prisma.contractEvent.create({
       data: {
-        name: "Northstar Logistics",
-        slug: "northstar-logistics"
+        organisationId: input.organisationId,
+        contractId: input.contractId,
+        eventType: ContractEventType.FINALIZED,
+        previousStatus: ContractStatus.DRAFT,
+        nextStatus: ContractStatus.FINALIZED,
+        summary: "Contract finalized from seed data",
+        metadata: { seeded: true }
       }
-    }),
-    prisma.organisation.create({
+    });
+  }
+
+  if (input.status === ContractStatus.ARCHIVED) {
+    await prisma.contractEvent.create({
       data: {
-        name: "Atlas Procurement",
-        slug: "atlas-procurement"
+        organisationId: input.organisationId,
+        contractId: input.contractId,
+        eventType: ContractEventType.ARCHIVED,
+        previousStatus: ContractStatus.FINALIZED,
+        nextStatus: ContractStatus.ARCHIVED,
+        summary: "Contract archived from seed data",
+        metadata: { seeded: true }
       }
-    })
-  ]);
+    });
+  }
+}
+
+async function main() {
+  const seededOrganisations = await Promise.all(
+    organisations.map((organisation) =>
+      prisma.organisation.upsert({
+        where: {
+          slug: organisation.slug
+        },
+        create: organisation,
+        update: {
+          name: organisation.name
+        }
+      })
+    )
+  );
 
   const organisationsBySlug = new Map(
-    organisations.map((organisation) => [organisation.slug, organisation])
+    seededOrganisations.map((organisation) => [organisation.slug, organisation])
   );
 
   for (const seedContract of contracts) {
@@ -141,6 +192,48 @@ async function main() {
 
     if (!organisation) {
       throw new Error(`Missing organisation for ${seedContract.orgSlug}`);
+    }
+
+    const existingContract = await prisma.contract.findUnique({
+      where: {
+        organisationId_contractNumber: {
+          organisationId: organisation.id,
+          contractNumber: seedContract.contractNumber
+        }
+      },
+      select: {
+        id: true,
+        deletedAt: true
+      }
+    });
+
+    if (existingContract) {
+      if (existingContract.deletedAt) {
+        await prisma.contract.update({
+          where: {
+            id: existingContract.id
+          },
+          data: {
+            deletedAt: null
+          }
+        });
+      }
+
+      const eventCount = await prisma.contractEvent.count({
+        where: {
+          contractId: existingContract.id
+        }
+      });
+
+      if (eventCount === 0) {
+        await createSeedEvents({
+          organisationId: organisation.id,
+          contractId: existingContract.id,
+          status: seedContract.status
+        });
+      }
+
+      continue;
     }
 
     const contract = await prisma.contract.create({
@@ -155,44 +248,11 @@ async function main() {
       }
     });
 
-    await prisma.contractEvent.create({
-      data: {
-        organisationId: organisation.id,
-        contractId: contract.id,
-        eventType: ContractEventType.CREATED,
-        nextStatus: ContractStatus.DRAFT,
-        summary: "Contract created from seed data",
-        metadata: { seeded: true }
-      }
+    await createSeedEvents({
+      organisationId: organisation.id,
+      contractId: contract.id,
+      status: seedContract.status
     });
-
-    if (seedContract.status === ContractStatus.FINALIZED || seedContract.status === ContractStatus.ARCHIVED) {
-      await prisma.contractEvent.create({
-        data: {
-          organisationId: organisation.id,
-          contractId: contract.id,
-          eventType: ContractEventType.FINALIZED,
-          previousStatus: ContractStatus.DRAFT,
-          nextStatus: ContractStatus.FINALIZED,
-          summary: "Contract finalized from seed data",
-          metadata: { seeded: true }
-        }
-      });
-    }
-
-    if (seedContract.status === ContractStatus.ARCHIVED) {
-      await prisma.contractEvent.create({
-        data: {
-          organisationId: organisation.id,
-          contractId: contract.id,
-          eventType: ContractEventType.ARCHIVED,
-          previousStatus: ContractStatus.FINALIZED,
-          nextStatus: ContractStatus.ARCHIVED,
-          summary: "Contract archived from seed data",
-          metadata: { seeded: true }
-        }
-      });
-    }
   }
 }
 
