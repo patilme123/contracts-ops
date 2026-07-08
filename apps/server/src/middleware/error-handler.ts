@@ -2,8 +2,19 @@ import type { ErrorRequestHandler } from "express";
 import { ZodError } from "zod";
 import { HttpError } from "../utils/http-error";
 
+function isZodError(error: unknown): error is ZodError {
+  return (
+    error instanceof ZodError ||
+    (typeof error === "object" &&
+      error !== null &&
+      "issues" in error &&
+      "flatten" in error &&
+      typeof (error as { flatten?: unknown }).flatten === "function")
+  );
+}
+
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
-  if (error instanceof ZodError) {
+  if (isZodError(error)) {
     response.status(400).json({
       message: "Validation failed",
       code: "VALIDATION_ERROR",
