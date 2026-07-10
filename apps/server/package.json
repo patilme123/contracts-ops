@@ -2,11 +2,11 @@
   "name": "@contract-console/server",
   "version": "0.1.0",
   "private": true,
-  "main": "dist/main.js",
+  "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "pnpm --filter @contract-console/database build && tsc -p tsconfig.json",
-    "start": "node dist/main.js",
+    "start": "node dist/server.js",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"

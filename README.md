@@ -17,12 +17,34 @@ The application is structured as a professional TypeScript monorepo with a Next.
 
 ```text
 apps/
-  web/       Next.js application
-  server/    Express API server
+  web/                    Next.js application
+  server/                 Express API server
+    src/
+      api/                Top-level API route composition
+      common/             Shared errors, middleware, types, and utilities
+      config/             Environment and CORS configuration
+      modules/            Feature-owned backend code
+        contracts/
+          controllers/    Express request/response adapters
+          mappers/        Database-to-API response mapping
+          policies/       Contract workflow and invariant rules
+          repositories/   Prisma persistence operations
+          routes/         Endpoint registration
+          schemas/        Request validation schemas
+          services/       Application and business use cases
+          types/          Feature-specific TypeScript contracts
+        organisations/    Organisation feature layers
+        contract-events/  Audit event feature layers
+        realtime/         SSE connection and publication layers
 packages/
-  database/  Prisma schema, Prisma client export, and database seed
-  shared/    Shared schemas, status constants, and API types
+  database/               Prisma schema, client export, migrations, and seed
+  shared/                 Cross-app schemas, constants, and API types
 ```
+
+The backend is a feature-first modular monolith. Code is grouped by business feature first,
+then by responsibility inside that feature. This keeps contract code together while preserving
+clear HTTP, business, and persistence boundaries. See [docs/architecture.md](docs/architecture.md)
+for the dependency rules and naming conventions.
 
 ## Local Setup
 
