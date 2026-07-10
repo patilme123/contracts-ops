@@ -1,44 +1,45 @@
-import type { ContractStatus } from "@contract-console/shared";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
-type BadgeTone = "neutral" | "draft" | "finalized" | "archived" | "success" | "warning";
-
-const toneClasses: Record<BadgeTone, string> = {
-  neutral: "border-border bg-muted text-muted-foreground",
-  draft: "border-amber-200 bg-amber-50 text-amber-700",
-  finalized: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  archived: "border-slate-200 bg-slate-100 text-slate-600",
-  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  warning: "border-amber-200 bg-amber-50 text-amber-700"
-};
-
-export function getStatusTone(status: ContractStatus): BadgeTone {
-  if (status === "DRAFT") {
-    return "draft";
+const badgeVariants = cva(
+  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default: "border-transparent bg-primary text-primary-foreground shadow",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        destructive:
+          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
+        outline: "text-foreground"
+      }
+    },
+    defaultVariants: {
+      variant: "default"
+    }
   }
+);
 
-  if (status === "FINALIZED") {
-    return "finalized";
-  }
-
-  return "archived";
-}
-
-export function Badge({
+function Badge({
   className,
-  tone = "neutral",
+  variant,
+  asChild = false,
   ...props
-}: React.HTMLAttributes<HTMLSpanElement> & {
-  tone?: BadgeTone;
-}) {
+}: React.HTMLAttributes<HTMLSpanElement> &
+  VariantProps<typeof badgeVariants> & {
+    asChild?: boolean;
+  }) {
+  const Component = asChild ? Slot : "span";
+
   return (
-    <span
-      className={cn(
-        "inline-flex h-7 items-center rounded-md border px-2.5 text-xs font-semibold uppercase tracking-normal",
-        toneClasses[tone],
-        className
-      )}
+    <Component
+      data-slot="badge"
+      className={cn(badgeVariants({ variant }), className)}
       {...props}
     />
   );
 }
+
+export { Badge, badgeVariants };

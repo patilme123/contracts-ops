@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@contract-console/shared": "workspace:*",
+    "@radix-ui/react-dialog": "^1.1.19",
+    "@radix-ui/react-select": "^2.3.3",
     "@radix-ui/react-slot": "^1.1.1",
     "@tanstack/react-query": "^5.62.8",
     "class-variance-authority": "^0.7.1",
@@ -19,7 +21,8 @@
     "next": "^15.1.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

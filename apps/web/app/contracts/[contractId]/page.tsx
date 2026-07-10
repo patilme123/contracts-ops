@@ -1,5 +1,5 @@
-import { AppShell } from "@/components/app-shell/app-shell";
-import { ContractDetail } from "@/components/contracts/contract-detail";
+import { ContractDetail } from "@/components/contracts/detail";
+import { AppShell } from "@/components/layout/shell";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -14,10 +14,10 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
 
   return (
     <AppShell>
-      <div className="space-y-6">
+      <div className="space-y-5">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-4" />
           Contracts

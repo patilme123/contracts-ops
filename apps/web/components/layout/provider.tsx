@@ -1,7 +1,7 @@
 "use client";
 
 import { listOrganisations } from "@/lib/api";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/lib/queries";
 import { subscribeToContractEvents } from "@/lib/realtime";
 import type { OrganisationSummary } from "@contract-console/shared";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

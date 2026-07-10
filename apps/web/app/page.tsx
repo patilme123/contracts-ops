@@ -1,5 +1,5 @@
-import { AppShell } from "@/components/app-shell/app-shell";
-import { ContractsOverview } from "@/components/contracts/contracts-overview";
+import { ContractsOverview } from "@/components/contracts/overview";
+import { AppShell } from "@/components/layout/shell";
 
 export default function DashboardPage() {
   return (

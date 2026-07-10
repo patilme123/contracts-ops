@@ -9,7 +9,7 @@ import type {
   OrganisationSummary,
   PaginatedResponse
 } from "@contract-console/shared";
-import { apiClient } from "./api-client";
+import { apiClient } from "./client";
 
 export type ContractListParams = {
   status?: ContractStatus;
