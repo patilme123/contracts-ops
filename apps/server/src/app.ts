@@ -1,10 +1,10 @@
 import cors from "cors";
 import express from "express";
-import { apiRouter } from "./api/api.router";
-import { errorHandler } from "./common/middleware/error-handler.middleware";
-import { notFoundHandler } from "./common/middleware/not-found.middleware";
-import { requestLogger } from "./common/middleware/request-logger.middleware";
-import { corsConfig } from "./config/cors.config";
+import { apiRouter } from "./api/router";
+import { errorHandler } from "./common/middleware/error";
+import { notFoundHandler } from "./common/middleware/fallback";
+import { requestLogger } from "./common/middleware/logger";
+import { corsConfig } from "./config/cors";
 
 export function createApp() {
   const app = express();

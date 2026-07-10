@@ -25,21 +25,21 @@ mappers before they leave the server.
 | Layer | Responsibility |
 | --- | --- |
 | `api` | Composes feature routes under stable public URL prefixes. |
-| `controllers` | Reads validated HTTP input, invokes a use case, and writes the HTTP response. |
-| `routes` | Declares HTTP methods, paths, validation, and controller bindings. |
-| `schemas` | Defines Zod validation for route parameters, queries, and request bodies. |
-| `services` | Coordinates business use cases, transactions, audit events, and publications. |
-| `policies` | Enforces domain invariants such as allowed contract status transitions. |
-| `repositories` | Owns Prisma queries and persistence details. |
-| `mappers` | Converts database values such as dates into stable API response values. |
-| `types` | Holds feature-specific input and internal contract types. |
+| `controller.ts` | Reads validated HTTP input, invokes a use case, and writes the HTTP response. |
+| `routes.ts` | Declares HTTP methods, paths, validation, and controller bindings. |
+| `schema.ts` | Defines Zod validation for route parameters, queries, and request bodies. |
+| `service.ts` | Coordinates business use cases, transactions, audit events, and publications. |
+| `policy.ts` | Enforces domain invariants such as allowed contract status transitions. |
+| `repository.ts` | Owns Prisma queries and persistence details. |
+| `mapper.ts` | Converts database values such as dates into stable API response values. |
+| `types.ts` | Holds feature-specific input and internal contract types. |
 | `common` | Contains genuinely reusable middleware, errors, types, and small utilities. |
 
 ## Naming Rules
 
 - Feature folders use business nouns: `contracts`, `organisations`, and `contract-events`.
-- Files use singular nouns plus their role: `contract.controller.ts`,
-  `contract.service.ts`, and `contract.repository.ts`.
+- Module folders provide the business context, so files use one role name: `controller.ts`,
+  `service.ts`, and `repository.ts`.
 - Exported collaborators are singular: `contractService` and `contractRepository`.
 - Business rules live in named policies, not generic helper files.
 - Cross-feature utilities must be domain-neutral and live under `common`.
@@ -58,7 +58,7 @@ mappers before they leave the server.
 
 ## Realtime Boundary
 
-`contract-status-stream.service.ts` owns the in-memory SSE subscribers. Contract application
+The realtime module's `service.ts` owns the in-memory SSE subscribers. Contract application
 services publish status-change events through this boundary only after successful finalization or
 archiving. For a multi-instance deployment, this implementation can be replaced with Redis pub/sub
 or PostgreSQL notifications without changing controllers or public routes.

@@ -25,14 +25,14 @@ apps/
       config/             Environment and CORS configuration
       modules/            Feature-owned backend code
         contracts/
-          controllers/    Express request/response adapters
-          mappers/        Database-to-API response mapping
-          policies/       Contract workflow and invariant rules
-          repositories/   Prisma persistence operations
-          routes/         Endpoint registration
-          schemas/        Request validation schemas
-          services/       Application and business use cases
-          types/          Feature-specific TypeScript contracts
+          controller.ts   Express request/response adapter
+          mapper.ts       Database-to-API response mapping
+          policy.ts       Contract workflow and invariant rules
+          repository.ts   Prisma persistence operations
+          routes.ts       Endpoint registration
+          schema.ts       Request validation schemas
+          service.ts      Application and business use cases
+          types.ts        Feature-specific TypeScript contracts
         organisations/    Organisation feature layers
         contract-events/  Audit event feature layers
         realtime/         SSE connection and publication layers
@@ -41,10 +41,9 @@ packages/
   shared/                 Cross-app schemas, constants, and API types
 ```
 
-The backend is a feature-first modular monolith. Code is grouped by business feature first,
-then by responsibility inside that feature. This keeps contract code together while preserving
-clear HTTP, business, and persistence boundaries. See [docs/architecture.md](docs/architecture.md)
-for the dependency rules and naming conventions.
+The backend is a compact feature-first modular monolith. Each module uses one clearly named file
+per responsibility, avoiding repeated names and unnecessary one-file directories. See
+[docs/architecture.md](docs/architecture.md) for the dependency rules and naming conventions.
 
 ## Local Setup
 
