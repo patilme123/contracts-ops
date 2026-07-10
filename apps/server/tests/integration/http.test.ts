@@ -85,6 +85,7 @@ function invokeApp(input: {
   method: "GET" | "POST" | "PATCH" | "DELETE";
   url: string;
   body?: unknown;
+  query?: Record<string, unknown>;
 }) {
   const request = httpMocks.createRequest({
     method: input.method,
@@ -94,7 +95,8 @@ function invokeApp(input: {
       "content-type": "application/json",
       origin: "http://localhost:3000"
     },
-    body: input.body
+    body: input.body,
+    query: input.query
   });
   const response = httpMocks.createResponse({
     eventEmitter: EventEmitter
@@ -191,6 +193,145 @@ describe("HTTP API", () => {
       organisationId,
       contractPayload
     );
+  });
+
+  it("lists contracts with validated backend filters", async () => {
+    mocks.contractService.list.mockResolvedValue({
+      data: [contractDetail],
+      pagination: {
+        page: 2,
+        pageSize: 10,
+        total: 11,
+        totalPages: 2
+      }
+    });
+
+    const response = await invokeApp({
+      method: "GET",
+      url: `/api/organisations/${organisationId}/contracts`,
+      query: {
+        status: "DRAFT",
+        clientName: "Apex",
+        contractId,
+        page: "2",
+        pageSize: "10"
+      }
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      pagination: {
+        page: 2,
+        total: 11
+      }
+    });
+    expect(mocks.contractService.list).toHaveBeenCalledWith(organisationId, {
+      status: "DRAFT",
+      clientName: "Apex",
+      contractId,
+      page: 2,
+      pageSize: 10
+    });
+  });
+
+  it("returns organisation-scoped contract details", async () => {
+    mocks.contractService.getByReference.mockResolvedValue(contractDetail);
+
+    const response = await invokeApp({
+      method: "GET",
+      url: `/api/organisations/${organisationId}/contracts/${contractId}`
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      data: {
+        contractNumber: contractId
+      }
+    });
+    expect(mocks.contractService.getByReference).toHaveBeenCalledWith(
+      organisationId,
+      contractId
+    );
+  });
+
+  it("updates draft contracts", async () => {
+    mocks.contractService.updateDraft.mockResolvedValue(contractDetail);
+
+    const response = await invokeApp({
+      method: "PATCH",
+      url: `/api/organisations/${organisationId}/contracts/${contractId}`,
+      body: contractPayload
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.contractService.updateDraft).toHaveBeenCalledWith(
+      organisationId,
+      contractId,
+      contractPayload
+    );
+  });
+
+  it("archives finalized contracts", async () => {
+    mocks.contractService.archive.mockResolvedValue({
+      ...contractDetail,
+      status: "ARCHIVED"
+    });
+
+    const response = await invokeApp({
+      method: "POST",
+      url: `/api/organisations/${organisationId}/contracts/${contractId}/archive`
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      data: {
+        status: "ARCHIVED"
+      }
+    });
+  });
+
+  it("deletes draft contracts with an empty response", async () => {
+    mocks.contractService.deleteDraft.mockResolvedValue(undefined);
+
+    const response = await invokeApp({
+      method: "DELETE",
+      url: `/api/organisations/${organisationId}/contracts/${contractId}`
+    });
+
+    expect(response.status).toBe(204);
+    expect(response.body).toBeUndefined();
+    expect(mocks.contractService.deleteDraft).toHaveBeenCalledWith(
+      organisationId,
+      contractId
+    );
+  });
+
+  it("returns contract audit history", async () => {
+    mocks.contractEventService.listByContract.mockResolvedValue([
+      {
+        id: "event-1",
+        contractId,
+        eventType: "CREATED",
+        previousStatus: null,
+        nextStatus: "DRAFT",
+        summary: "Contract created",
+        createdAt: "2026-01-15T00:00:00.000Z"
+      }
+    ]);
+
+    const response = await invokeApp({
+      method: "GET",
+      url: `/api/organisations/${organisationId}/contracts/${contractId}/events`
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      data: [
+        {
+          eventType: "CREATED"
+        }
+      ]
+    });
   });
 
   it("returns contract stats", async () => {
