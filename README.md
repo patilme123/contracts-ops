@@ -6,7 +6,7 @@ The application is structured as a professional TypeScript monorepo with a Next.
 
 ## Tech Stack
 
-- Frontend: Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui-style components, TanStack Query
+- Frontend: Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui, TanStack Query
 - Backend: Node.js, Express, TypeScript, Prisma, Zod
 - Database: PostgreSQL locally, Neon PostgreSQL in production
 - Real-time: Server-Sent Events for contract status broadcasts
@@ -17,7 +17,7 @@ The application is structured as a professional TypeScript monorepo with a Next.
 
 ```text
 apps/
-  web/                    Next.js application
+  web/                    Next.js application with configured shadcn/ui primitives
   server/                 Express API server
     src/
       api/                Top-level API route composition
@@ -44,6 +44,8 @@ packages/
 The backend is a compact feature-first modular monolith. Each module uses one clearly named file
 per responsibility, avoiding repeated names and unnecessary one-file directories. See
 [docs/architecture.md](docs/architecture.md) for the dependency rules and naming conventions.
+The requirement-by-requirement review is documented in
+[docs/assignment-checklist.md](docs/assignment-checklist.md).
 
 ## Local Setup
 
@@ -258,8 +260,9 @@ Completed:
 - Audit events
 - SSE status broadcasts
 - Next.js dashboard/detail/upload UI
+- Configured shadcn/ui component system and responsive operations layout
 - Neon migration and seed data
-- Backend workflow tests
+- 18 backend API and workflow tests
 
 Pending for final submission:
 
