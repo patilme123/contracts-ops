@@ -1,102 +1,62 @@
 # Contract Operations Console
 
-A full-stack contract operations console for the 2026 full-stack engineering assignment.
+A multi-tenant contract management workspace built with Next.js, Express, PostgreSQL, and Server-Sent Events.
 
-The application is structured as a professional TypeScript monorepo with a Next.js frontend, an Express backend, shared validation/types, Prisma, and PostgreSQL.
+## Features
 
-## Tech Stack
+- Organisation-scoped contract workspaces and team directory
+- Local demo access profiles for switching into a seeded workspace
+- JSON contract upload with shared Zod validation
+- Backend-powered search, filtering, sorting, and pagination
+- Draft-only contract editing and deletion
+- Controlled contract workflow: `DRAFT -> FINALIZED -> ARCHIVED`
+- Persisted audit trail for contract activity
+- Live status updates across browser tabs with SSE
+
+## Stack
 
 - Frontend: Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui, TanStack Query
 - Backend: Node.js, Express, TypeScript, Prisma, Zod
-- Database: PostgreSQL locally, Neon PostgreSQL in production
-- Real-time: Server-Sent Events for contract status broadcasts
-- Deployment target: Vercel for `apps/web`, Railway for `apps/server`
-- Alternative backend deployment: AWS EC2 with PM2 and Nginx
+- Database: PostgreSQL locally and Neon PostgreSQL in production
+- Deployment: Vercel for the web app and Railway for the API
 
-## Repository Structure
+## Structure
 
 ```text
 apps/
-  web/                    Next.js application with configured shadcn/ui primitives
-  server/                 Express API server
-    src/
-      api/                Top-level API route composition
-      common/             Shared errors, middleware, types, and utilities
-      config/             Environment and CORS configuration
-      modules/            Feature-owned backend code
-        contracts/
-          controller.ts   Express request/response adapter
-          mapper.ts       Database-to-API response mapping
-          policy.ts       Contract workflow and invariant rules
-          repository.ts   Prisma persistence operations
-          routes.ts       Endpoint registration
-          schema.ts       Request validation schemas
-          service.ts      Application and business use cases
-          types.ts        Feature-specific TypeScript contracts
-        organisations/    Organisation feature layers
-        contract-events/  Audit event feature layers
-        realtime/         SSE connection and publication layers
+  web/              Next.js application
+  server/           Express API
 packages/
-  database/               Prisma schema, client export, migrations, and seed
-  shared/                 Cross-app schemas, constants, and API types
+  database/         Prisma schema, migrations, and seed data
+  shared/           Shared validation, status constants, and API types
+docs/
+  openapi.yaml      API reference
+  architecture.md   Backend architecture notes
 ```
 
-The backend is a compact feature-first modular monolith. Each module uses one clearly named file
-per responsibility, avoiding repeated names and unnecessary one-file directories. See
-[docs/architecture.md](docs/architecture.md) for the dependency rules and naming conventions.
-The requirement-by-requirement review is documented in
-[docs/assignment-checklist.md](docs/assignment-checklist.md).
+## Local Development
 
-## Local Setup
-
-Install dependencies:
+Install dependencies and configure local environment variables:
 
 ```bash
 pnpm install
-```
-
-Copy environment variables:
-
-```bash
 cp .env.example .env
 ```
 
-Start local PostgreSQL:
+Start PostgreSQL, prepare the database, and launch both applications:
 
 ```bash
 docker compose up -d
-```
-
-Generate Prisma client and run migrations:
-
-```bash
 pnpm db:generate
 pnpm db:migrate
-```
-
-Seed local data:
-
-```bash
 pnpm db:seed
-```
-
-Start both apps:
-
-```bash
 pnpm dev
 ```
 
-Frontend runs at:
+- Web app: `http://localhost:3000`
+- API health check: `http://localhost:4000/health`
 
-```text
-http://localhost:3000
-```
-
-Backend health check:
-
-```text
-http://localhost:4000/health
-```
+The sign-in screen provides local demo profiles. Select a profile to enter its seeded organisation workspace.
 
 ## Environment Variables
 
@@ -109,13 +69,13 @@ DIRECT_URL=postgresql://contract_console:contract_console@localhost:5432/contrac
 NEXT_PUBLIC_API_URL=http://localhost:4000/api
 ```
 
-For Neon PostgreSQL, use the pooled Neon connection string for `DATABASE_URL` and the direct connection string for `DIRECT_URL`. Keep real Neon credentials in `.env`; do not commit them.
+For Neon, use the pooled connection string for `DATABASE_URL` and the direct connection string for `DIRECT_URL`. Keep credentials in `.env` only.
 
-## API Shape
+## API
 
-OpenAPI documentation is available at `docs/openapi.yaml`.
+OpenAPI documentation: [docs/openapi.yaml](docs/openapi.yaml)
 
-Implemented endpoints:
+Key endpoints:
 
 ```text
 GET    /api/organisations
@@ -123,7 +83,6 @@ GET    /api/organisations/:organisationId
 GET    /api/organisations/:organisationId/members
 GET    /api/organisations/:organisationId/contracts
 POST   /api/organisations/:organisationId/contracts
-GET    /api/organisations/:organisationId/contracts/stats
 GET    /api/organisations/:organisationId/contracts/:contractId
 PATCH  /api/organisations/:organisationId/contracts/:contractId
 POST   /api/organisations/:organisationId/contracts/:contractId/finalize
@@ -133,145 +92,26 @@ GET    /api/organisations/:organisationId/contracts/:contractId/events
 GET    /api/organisations/:organisationId/realtime/contracts
 ```
 
-Search parameters:
+Contract search supports `status`, `search`, `poDateFrom`, `poDateTo`, `sortBy`, `sortOrder`, `page`, and `pageSize` query parameters.
+
+## Deployment
+
+Deploy `apps/web` to Vercel and `apps/server` to Railway. Configure the following production variables:
 
 ```text
-status=DRAFT|FINALIZED|ARCHIVED
-search=partial client name, contract number, or UUID
-poDateFrom=YYYY-MM-DD
-poDateTo=YYYY-MM-DD
-sortBy=updatedAt|poDate|clientName|contractNumber
-sortOrder=asc|desc
-page=1
-pageSize=10
-```
-
-## Contract JSON
-
-```json
-{
-  "client_name": "Apex Manufacturing",
-  "po_ref_no": "PO-2026-1001",
-  "po_date": "2026-01-15",
-  "payment_terms": "Net 30",
-  "delivery_terms": "FOB Mumbai",
-  "items": [
-    {
-      "description": "Industrial packing materials",
-      "quantity": 1200,
-      "quantity_unit": "units",
-      "unit_price": 4.5,
-      "pricing_unit": "unit",
-      "total": 5400
-    }
-  ]
-}
-```
-
-## Data Model
-
-The Prisma schema, seed script, and exported Prisma client live in `packages/database`.
-
-Core tables:
-
-- `organisations`
-- `organisation_members`
-- `contracts`
-- `contract_events`
-
-Contracts store the uploaded payload in `field_data` as JSONB while duplicating searchable fields such as client name, PO reference, and PO date into normal columns.
-
-## Real-Time Design
-
-The server exposes an SSE stream at:
-
-```text
-GET /api/organisations/:organisationId/realtime/contracts
-```
-
-SSE is appropriate for this assignment because status updates are one-way server-to-browser events. If the backend later scales to multiple instances, the in-memory broadcaster can be replaced with Redis pub/sub or PostgreSQL notifications.
-
-## Deployment Notes
-
-Primary path:
-
-- Deploy `apps/web` to Vercel.
-- Deploy `apps/server` to Railway.
-- Use Neon PostgreSQL for production.
-
-Railway can use the root `railway.json` service config.
-
-For Vercel, set the project root to `apps/web`; the app includes `apps/web/vercel.json`.
-
-Railway variables:
-
-```text
+# Railway
 NODE_ENV=production
-PORT=4000
 CORS_ORIGIN=https://your-vercel-app.vercel.app
 DATABASE_URL=your-neon-pooled-connection-string
 DIRECT_URL=your-neon-direct-connection-string
+
+# Vercel
+NEXT_PUBLIC_API_URL=https://your-railway-service.up.railway.app/api
 ```
 
-Vercel variables:
-
-```text
-NEXT_PUBLIC_API_URL=https://your-railway-server.up.railway.app/api
-```
-
-After deploying the backend, apply migrations and seed production data:
+After the API is deployed, apply database migrations and seed data:
 
 ```bash
 pnpm db:deploy
 pnpm db:seed
 ```
-
-## Evaluation Guide
-
-Use this flow to evaluate the required assignment behavior:
-
-1. Sign in with one of the local demo credentials and confirm the organisation workspace.
-2. Search/filter contracts by status, PO date, ordering, and page size.
-3. Upload the prefilled JSON, optionally edit it, and confirm it appears as `DRAFT`.
-4. Open a draft contract, edit JSON, and save it.
-5. Finalize the draft contract.
-6. Open another browser tab and confirm status changes refresh through SSE.
-7. Archive a finalized contract.
-8. Confirm audit events appear on the contract detail page.
-
-## Verification
-
-```bash
-pnpm test
-pnpm build
-```
-
-AWS EC2 alternative:
-
-- Install Node.js LTS and pnpm.
-- Build `apps/server`.
-- Run the server with PM2.
-- Put Nginx and HTTPS in front of Express.
-- Keep Neon as the database.
-
-## Current Status
-
-Completed:
-
-- Organisation-scoped contracts API
-- JSON validation
-- Search, filters, and pagination
-- Draft-only updates and deletes
-- `DRAFT -> FINALIZED -> ARCHIVED` workflow
-- Audit events
-- SSE status broadcasts
-- Next.js dashboard/detail/upload UI
-- Configured shadcn/ui component system and responsive operations layout
-- Neon migration and seed data
-- 21 backend API and workflow tests
-
-Pending for final submission:
-
-- Deployed frontend URL
-- Deployed backend URL
-- Any evaluator access notes
