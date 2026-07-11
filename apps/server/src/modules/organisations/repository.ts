@@ -24,5 +24,49 @@ export const organisationRepository = {
         id: true
       }
     });
+  },
+
+  findProfileById(organisationId: string) {
+    return prisma.organisation.findUnique({
+      where: {
+        id: organisationId
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        timezone: true,
+        createdAt: true,
+        _count: {
+          select: {
+            members: true
+          }
+        }
+      }
+    });
+  },
+
+  findMembersByOrganisation(organisationId: string) {
+    return prisma.organisationMember.findMany({
+      where: {
+        organisationId
+      },
+      orderBy: [
+        {
+          role: "asc"
+        },
+        {
+          name: "asc"
+        }
+      ],
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        title: true
+      }
+    });
   }
 };

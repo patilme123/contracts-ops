@@ -19,9 +19,14 @@ export const contractService = {
       organisationId,
       filters: {
         status: query.status,
+        search: query.search,
         clientName: query.clientName,
-        contractId: query.contractId
+        contractId: query.contractId,
+        poDateFrom: query.poDateFrom,
+        poDateTo: query.poDateTo
       },
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
       pagination: parsePagination(query)
     });
   },

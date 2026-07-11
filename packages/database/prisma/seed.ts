@@ -1,16 +1,70 @@
 import "dotenv/config";
-import { ContractEventType, ContractStatus, PrismaClient } from "@prisma/client";
+import {
+  ContractEventType,
+  ContractStatus,
+  OrganisationMemberRole,
+  PrismaClient
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 const organisations = [
   {
     name: "Northstar Logistics",
-    slug: "northstar-logistics"
+    slug: "northstar-logistics",
+    description: "Regional freight and warehouse operations across India.",
+    timezone: "Asia/Kolkata"
   },
   {
     name: "Atlas Procurement",
-    slug: "atlas-procurement"
+    slug: "atlas-procurement",
+    description: "Central procurement operations for enterprise facilities.",
+    timezone: "Asia/Kolkata"
+  }
+];
+
+const members = [
+  {
+    orgSlug: "northstar-logistics",
+    name: "Nadia Shah",
+    email: "nadia@northstar.demo",
+    role: OrganisationMemberRole.OPERATIONS_LEAD,
+    title: "Operations Lead"
+  },
+  {
+    orgSlug: "northstar-logistics",
+    name: "Dev Malhotra",
+    email: "dev@northstar.demo",
+    role: OrganisationMemberRole.CONTRACT_SPECIALIST,
+    title: "Contract Specialist"
+  },
+  {
+    orgSlug: "northstar-logistics",
+    name: "Mira Rao",
+    email: "mira@northstar.demo",
+    role: OrganisationMemberRole.FINANCE_REVIEWER,
+    title: "Finance Reviewer"
+  },
+  {
+    orgSlug: "atlas-procurement",
+    name: "Arjun Mehta",
+    email: "arjun@atlas.demo",
+    role: OrganisationMemberRole.PROCUREMENT_MANAGER,
+    title: "Procurement Manager"
+  },
+  {
+    orgSlug: "atlas-procurement",
+    name: "Kiran Patel",
+    email: "kiran@atlas.demo",
+    role: OrganisationMemberRole.FINANCE_REVIEWER,
+    title: "Finance Reviewer"
+  },
+  {
+    orgSlug: "atlas-procurement",
+    name: "Sana Khan",
+    email: "sana@atlas.demo",
+    role: OrganisationMemberRole.ADMIN,
+    title: "Workspace Administrator"
   }
 ];
 
@@ -177,7 +231,9 @@ async function main() {
         },
         create: organisation,
         update: {
-          name: organisation.name
+          name: organisation.name,
+          description: organisation.description,
+          timezone: organisation.timezone
         }
       })
     )
@@ -186,6 +242,35 @@ async function main() {
   const organisationsBySlug = new Map(
     seededOrganisations.map((organisation) => [organisation.slug, organisation])
   );
+
+  for (const member of members) {
+    const organisation = organisationsBySlug.get(member.orgSlug);
+
+    if (!organisation) {
+      throw new Error(`Missing organisation for ${member.orgSlug}`);
+    }
+
+    await prisma.organisationMember.upsert({
+      where: {
+        organisationId_email: {
+          organisationId: organisation.id,
+          email: member.email
+        }
+      },
+      create: {
+        organisationId: organisation.id,
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        title: member.title
+      },
+      update: {
+        name: member.name,
+        role: member.role,
+        title: member.title
+      }
+    });
+  }
 
   for (const seedContract of contracts) {
     const organisation = organisationsBySlug.get(seedContract.orgSlug);

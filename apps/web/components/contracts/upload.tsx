@@ -21,11 +21,33 @@ import { Upload } from "lucide-react";
 import { useState } from "react";
 import { useOrganisationContext } from "../layout/provider";
 
+const defaultContractJson = JSON.stringify(
+  {
+    client_name: "Apex Manufacturing",
+    po_ref_no: "PO-2026-1001",
+    po_date: "2026-01-15",
+    payment_terms: "Net 30",
+    delivery_terms: "FOB Mumbai",
+    items: [
+      {
+        description: "Industrial packing materials",
+        quantity: 120,
+        quantity_unit: "units",
+        unit_price: 45,
+        pricing_unit: "unit",
+        total: 5400
+      }
+    ]
+  },
+  null,
+  2
+);
+
 export function UploadJsonButton() {
   const queryClient = useQueryClient();
   const { selectedOrganisationId } = useOrganisationContext();
   const [isOpen, setIsOpen] = useState(false);
-  const [jsonText, setJsonText] = useState("");
+  const [jsonText, setJsonText] = useState(defaultContractJson);
   const [error, setError] = useState<string | null>(null);
 
   const createMutation = useMutation({
@@ -51,7 +73,7 @@ export function UploadJsonButton() {
       return createContract(selectedOrganisationId, validationResult.data);
     },
     onSuccess: async () => {
-      setJsonText("");
+      setJsonText(defaultContractJson);
       setError(null);
       setIsOpen(false);
 
@@ -75,6 +97,10 @@ export function UploadJsonButton() {
       onOpenChange={(open) => {
         setIsOpen(open);
 
+        if (open && jsonText.trim().length === 0) {
+          setJsonText(defaultContractJson);
+        }
+
         if (!open) {
           setError(null);
         }
@@ -83,7 +109,7 @@ export function UploadJsonButton() {
       <DialogTrigger asChild>
         <Button type="button" disabled={!selectedOrganisationId}>
           <Upload />
-          Upload JSON
+          Upload contract JSON
         </Button>
       </DialogTrigger>
 
@@ -91,7 +117,7 @@ export function UploadJsonButton() {
         <DialogHeader>
           <DialogTitle>Upload contract JSON</DialogTitle>
           <DialogDescription>
-            Valid payloads are validated and created as draft contracts.
+            Edit this JSON payload, then create a validated draft contract.
           </DialogDescription>
         </DialogHeader>
 
@@ -99,7 +125,6 @@ export function UploadJsonButton() {
           value={jsonText}
           onChange={(event) => setJsonText(event.target.value)}
           className="min-h-[360px] resize-y p-4 font-mono leading-6"
-          placeholder='{"client_name":"Apex Manufacturing","po_ref_no":"PO-2026-1001","po_date":"2026-01-15","items":[{"description":"Service","quantity":1,"unit_price":100}]}'
           aria-label="Contract JSON"
         />
 

@@ -15,6 +15,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrganisationListResponse"
+  /organisations/{organisationId}:
+    get:
+      summary: Get organisation workspace profile
+      parameters:
+        - $ref: "#/components/parameters/OrganisationId"
+      responses:
+        "200":
+          description: Organisation profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganisationProfileResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /organisations/{organisationId}/members:
+    get:
+      summary: List organisation members
+      parameters:
+        - $ref: "#/components/parameters/OrganisationId"
+      responses:
+        "200":
+          description: Organisation members
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganisationMembersResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /organisations/{organisationId}/contracts:
     get:
       summary: Search contracts for an organisation
@@ -24,6 +52,11 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/ContractStatus"
+        - name: search
+          in: query
+          description: Partial client name, contract number, or contract UUID
+          schema:
+            type: string
         - name: clientName
           in: query
           schema:
@@ -32,6 +65,26 @@ paths:
           in: query
           schema:
             type: string
+        - name: poDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: poDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [updatedAt, poDate, clientName, contractNumber]
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
         - name: page
           in: query
           schema:
@@ -233,6 +286,40 @@ components:
           type: string
         slug:
           type: string
+    OrganisationProfile:
+      allOf:
+        - $ref: "#/components/schemas/Organisation"
+        - type: object
+          required: [timezone, createdAt, memberCount]
+          properties:
+            description:
+              oneOf:
+                - type: string
+                - type: "null"
+            timezone:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            memberCount:
+              type: integer
+    OrganisationMember:
+      type: object
+      required: [id, name, email, role, title]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [ADMIN, OPERATIONS_LEAD, PROCUREMENT_MANAGER, FINANCE_REVIEWER, CONTRACT_SPECIALIST]
+        title:
+          type: string
     ContractSummary:
       type: object
       required: [id, organisationId, contractNumber, status, clientName, poRefNo, poDate, updatedAt]
@@ -350,6 +437,20 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Organisation"
+    OrganisationProfileResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/OrganisationProfile"
+    OrganisationMembersResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrganisationMember"
     ContractResponse:
       type: object
       required: [data]

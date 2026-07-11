@@ -6,6 +6,8 @@ import type {
   ContractStats,
   ContractStatus,
   ContractSummary,
+  OrganisationMember,
+  OrganisationProfile,
   OrganisationSummary,
   PaginatedResponse
 } from "@contract-console/shared";
@@ -13,14 +15,29 @@ import { apiClient } from "./client";
 
 export type ContractListParams = {
   status?: ContractStatus;
+  search?: string;
   clientName?: string;
   contractId?: string;
+  poDateFrom?: string;
+  poDateTo?: string;
+  sortBy?: "updatedAt" | "poDate" | "clientName" | "contractNumber";
+  sortOrder?: "asc" | "desc";
   page?: number;
   pageSize?: number;
 };
 
 export function listOrganisations() {
   return apiClient<ApiResponse<OrganisationSummary[]>>("/organisations");
+}
+
+export function getOrganisation(organisationId: string) {
+  return apiClient<ApiResponse<OrganisationProfile>>(`/organisations/${organisationId}`);
+}
+
+export function listOrganisationMembers(organisationId: string) {
+  return apiClient<ApiResponse<OrganisationMember[]>>(
+    `/organisations/${organisationId}/members`
+  );
 }
 
 export function listContracts(organisationId: string, params: ContractListParams) {

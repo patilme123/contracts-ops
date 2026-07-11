@@ -8,7 +8,9 @@ process.env.CORS_ORIGIN ??= "http://localhost:3000";
 
 const mocks = vi.hoisted(() => ({
   organisationService: {
-    list: vi.fn()
+    list: vi.fn(),
+    getProfile: vi.fn(),
+    listMembers: vi.fn()
   },
   contractService: {
     list: vi.fn(),
@@ -160,6 +162,59 @@ describe("HTTP API", () => {
     });
   });
 
+  it("returns an organisation profile", async () => {
+    mocks.organisationService.getProfile.mockResolvedValue({
+      id: organisationId,
+      name: "Northstar Logistics",
+      slug: "northstar-logistics",
+      description: "Regional freight and warehouse operations across India.",
+      timezone: "Asia/Kolkata",
+      createdAt: "2026-07-11T00:00:00.000Z",
+      memberCount: 3
+    });
+
+    const response = await invokeApp({
+      method: "GET",
+      url: `/api/organisations/${organisationId}`
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      data: {
+        name: "Northstar Logistics",
+        memberCount: 3
+      }
+    });
+    expect(mocks.organisationService.getProfile).toHaveBeenCalledWith(organisationId);
+  });
+
+  it("returns organisation members", async () => {
+    mocks.organisationService.listMembers.mockResolvedValue([
+      {
+        id: "member-1",
+        name: "Nadia Shah",
+        email: "nadia@northstar.demo",
+        role: "OPERATIONS_LEAD",
+        title: "Operations Lead"
+      }
+    ]);
+
+    const response = await invokeApp({
+      method: "GET",
+      url: `/api/organisations/${organisationId}/members`
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      data: [
+        {
+          email: "nadia@northstar.demo"
+        }
+      ]
+    });
+    expect(mocks.organisationService.listMembers).toHaveBeenCalledWith(organisationId);
+  });
+
   it("rejects invalid contract upload JSON", async () => {
     const response = await invokeApp({
       method: "POST",
@@ -211,8 +266,11 @@ describe("HTTP API", () => {
       url: `/api/organisations/${organisationId}/contracts`,
       query: {
         status: "DRAFT",
-        clientName: "Apex",
-        contractId,
+        search: "Apex",
+        poDateFrom: "2026-01-01",
+        poDateTo: "2026-12-31",
+        sortBy: "poDate",
+        sortOrder: "desc",
         page: "2",
         pageSize: "10"
       }
@@ -227,11 +285,31 @@ describe("HTTP API", () => {
     });
     expect(mocks.contractService.list).toHaveBeenCalledWith(organisationId, {
       status: "DRAFT",
-      clientName: "Apex",
-      contractId,
+      search: "Apex",
+      poDateFrom: "2026-01-01",
+      poDateTo: "2026-12-31",
+      sortBy: "poDate",
+      sortOrder: "desc",
       page: 2,
       pageSize: 10
     });
+  });
+
+  it("rejects an inverted PO date range", async () => {
+    const response = await invokeApp({
+      method: "GET",
+      url: `/api/organisations/${organisationId}/contracts`,
+      query: {
+        poDateFrom: "2026-12-31",
+        poDateTo: "2026-01-01"
+      }
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toMatchObject({
+      code: "VALIDATION_ERROR"
+    });
+    expect(mocks.contractService.list).not.toHaveBeenCalled();
   });
 
   it("returns organisation-scoped contract details", async () => {

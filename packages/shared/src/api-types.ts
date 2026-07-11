@@ -27,6 +27,26 @@ export type OrganisationSummary = {
   slug: string;
 };
 
+export type OrganisationProfile = OrganisationSummary & {
+  description: string | null;
+  timezone: string;
+  createdAt: string;
+  memberCount: number;
+};
+
+export type OrganisationMember = {
+  id: string;
+  name: string;
+  email: string;
+  role:
+    | "ADMIN"
+    | "OPERATIONS_LEAD"
+    | "PROCUREMENT_MANAGER"
+    | "FINANCE_REVIEWER"
+    | "CONTRACT_SPECIALIST";
+  title: string;
+};
+
 export type ContractSummary = {
   id: string;
   organisationId: string;

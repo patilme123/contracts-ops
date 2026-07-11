@@ -12,40 +12,68 @@ function buildContractListFilter(
   organisationId: string,
   filters: ContractListFilters
 ): Prisma.ContractWhereInput {
-  const where: Prisma.ContractWhereInput = {
-    organisationId,
-    deletedAt: null
-  };
+  const conditions: Prisma.ContractWhereInput[] = [{ organisationId, deletedAt: null }];
 
   if (filters.status) {
-    where.status = filters.status as Prisma.EnumContractStatusFilter["equals"];
+    conditions.push({
+      status: filters.status as Prisma.EnumContractStatusFilter["equals"]
+    });
   }
 
   if (filters.clientName) {
-    where.clientName = {
-      contains: filters.clientName,
-      mode: "insensitive"
-    };
+    conditions.push({
+      clientName: {
+        contains: filters.clientName,
+        mode: "insensitive"
+      }
+    });
   }
 
   if (filters.contractId) {
-    const contractSearch: Prisma.ContractWhereInput[] = [
-      {
-        contractNumber: {
-          contains: filters.contractId,
-          mode: "insensitive"
-        }
-      }
-    ];
-
-    if (isUuid(filters.contractId)) {
-      contractSearch.unshift({ id: filters.contractId });
-    }
-
-    where.OR = contractSearch;
+    conditions.push(buildContractSearchFilter(filters.contractId));
   }
 
-  return where;
+  if (filters.search) {
+    conditions.push({
+      OR: [
+        {
+          clientName: {
+            contains: filters.search,
+            mode: "insensitive"
+          }
+        },
+        buildContractSearchFilter(filters.search)
+      ]
+    });
+  }
+
+  if (filters.poDateFrom || filters.poDateTo) {
+    conditions.push({
+      poDate: {
+        gte: filters.poDateFrom ? new Date(`${filters.poDateFrom}T00:00:00.000Z`) : undefined,
+        lte: filters.poDateTo ? new Date(`${filters.poDateTo}T23:59:59.999Z`) : undefined
+      }
+    });
+  }
+
+  return { AND: conditions };
+}
+
+function buildContractSearchFilter(value: string): Prisma.ContractWhereInput {
+  const contractSearch: Prisma.ContractWhereInput[] = [
+    {
+      contractNumber: {
+        contains: value,
+        mode: "insensitive"
+      }
+    }
+  ];
+
+  if (isUuid(value)) {
+    contractSearch.unshift({ id: value });
+  }
+
+  return { OR: contractSearch };
 }
 
 function buildContractReferenceFilter(
@@ -76,11 +104,14 @@ export const contractRepository = {
 
   async listByOrganisation(input: ListContractsRepositoryInput) {
     const where = buildContractListFilter(input.organisationId, input.filters);
+    const orderBy = {
+      [input.sortBy ?? "updatedAt"]: input.sortOrder ?? "desc"
+    } as Prisma.ContractOrderByWithRelationInput;
 
     const [contracts, total] = await prisma.$transaction([
       prisma.contract.findMany({
         where,
-        orderBy: { updatedAt: "desc" },
+        orderBy,
         skip: input.pagination.skip,
         take: input.pagination.take,
         select: {

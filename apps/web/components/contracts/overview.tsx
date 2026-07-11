@@ -30,12 +30,25 @@ import { Archive, CheckCircle2, FileText, PencilLine, Search } from "lucide-reac
 import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
-const statusFilters: Array<"ALL" | ContractStatus> = [
-  "ALL",
-  "DRAFT",
-  "FINALIZED",
-  "ARCHIVED"
+const statusOptions: Array<{ value: "ALL" | ContractStatus; label: string }> = [
+  { value: "ALL", label: "All statuses" },
+  { value: "DRAFT", label: "Draft" },
+  { value: "FINALIZED", label: "Finalized" },
+  { value: "ARCHIVED", label: "Archived" }
 ];
+
+const poDateOptions = {
+  ALL: { label: "All PO dates", from: undefined, to: undefined },
+  YEAR_2025: { label: "PO date: 2025", from: "2025-01-01", to: "2025-12-31" },
+  YEAR_2026: { label: "PO date: 2026", from: "2026-01-01", to: "2026-12-31" }
+} as const;
+
+const sortOptions = {
+  UPDATED_DESC: { label: "Recently updated", sortBy: "updatedAt", sortOrder: "desc" },
+  UPDATED_ASC: { label: "Least recently updated", sortBy: "updatedAt", sortOrder: "asc" },
+  PO_DATE_DESC: { label: "Newest PO date", sortBy: "poDate", sortOrder: "desc" },
+  CLIENT_ASC: { label: "Client name A-Z", sortBy: "clientName", sortOrder: "asc" }
+} as const;
 
 function buildStatistics(statistics?: ContractStats) {
   return [
@@ -66,25 +79,38 @@ export function ContractsOverview() {
   const { selectedOrganisationId, selectedOrganisation, isLoadingOrganisations } =
     useOrganisationContext();
   const [status, setStatus] = useState<"ALL" | ContractStatus>("ALL");
-  const [clientName, setClientName] = useState("");
-  const [contractId, setContractId] = useState("");
+  const [search, setSearch] = useState("");
+  const [poDateFilter, setPoDateFilter] = useState<keyof typeof poDateOptions>("ALL");
+  const [sort, setSort] = useState<keyof typeof sortOptions>("UPDATED_DESC");
+  const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
-  const deferredClientName = useDeferredValue(clientName);
-  const deferredContractId = useDeferredValue(contractId);
+  const deferredSearch = useDeferredValue(search);
 
   useEffect(() => {
     setPage(1);
   }, [selectedOrganisationId]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [deferredSearch, poDateFilter, sort, status, pageSize]);
+
   const filters = useMemo<ContractListParams>(
-    () => ({
-      status: status === "ALL" ? undefined : status,
-      clientName: deferredClientName.trim() || undefined,
-      contractId: deferredContractId.trim() || undefined,
-      page,
-      pageSize: 10
-    }),
-    [deferredClientName, deferredContractId, page, status]
+    () => {
+      const poDate = poDateOptions[poDateFilter];
+      const sortSelection = sortOptions[sort];
+
+      return {
+        status: status === "ALL" ? undefined : status,
+        search: deferredSearch.trim() || undefined,
+        poDateFrom: poDate.from,
+        poDateTo: poDate.to,
+        sortBy: sortSelection.sortBy,
+        sortOrder: sortSelection.sortOrder,
+        page,
+        pageSize
+      };
+    },
+    [deferredSearch, page, pageSize, poDateFilter, sort, status]
   );
 
   const contractsQuery = useQuery({
@@ -122,16 +148,10 @@ export function ContractsOverview() {
   const loadError =
     contractsQuery.error instanceof Error ? contractsQuery.error.message : null;
 
-  function selectStatus(nextStatus: "ALL" | ContractStatus) {
-    setStatus(nextStatus);
-    setPage(1);
-  }
-
   return (
     <div className="space-y-7">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-1 text-sm font-medium text-primary">Contract operations</p>
           <h1 className="text-[28px] font-semibold leading-tight text-foreground">
             Contracts
           </h1>
@@ -174,71 +194,79 @@ export function ContractsOverview() {
         })}
       </section>
 
-      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        <div className="border-b border-border p-4 sm:p-5">
-          <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_230px_auto] lg:items-center">
+      <section>
+        <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(280px,1.6fr)_minmax(150px,0.8fr)_minmax(160px,0.9fr)_minmax(175px,1fr)_120px] xl:items-center">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                value={clientName}
+                value={search}
                 onChange={(event) => {
-                  setClientName(event.target.value);
-                  setPage(1);
+                  setSearch(event.target.value);
                 }}
-                placeholder="Search by client name"
-                className="pl-9"
-              />
-            </div>
-
-            <div className="relative">
-              <FileText className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={contractId}
-                onChange={(event) => {
-                  setContractId(event.target.value);
-                  setPage(1);
-                }}
-                placeholder="Contract ID or number"
+                placeholder="Search client, contract number, or ID"
                 className="pl-9"
               />
             </div>
 
             <Select
               value={status}
-              onValueChange={(value) => selectStatus(value as "ALL" | ContractStatus)}
+              onValueChange={(value) => setStatus(value as "ALL" | ContractStatus)}
             >
-              <SelectTrigger aria-label="Contract status" className="sm:hidden">
+              <SelectTrigger aria-label="Filter by contract status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {statusFilters.map((filter) => (
-                  <SelectItem key={filter} value={filter}>
-                    {filter === "ALL" ? "All statuses" : filter}
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <div className="hidden rounded-md bg-secondary p-1 sm:flex">
-              {statusFilters.map((filter) => (
-                <Button
-                  key={filter}
-                  type="button"
-                  variant={filter === status ? "outline" : "ghost"}
-                  size="sm"
-                  className={cn(
-                    "h-8 px-3 text-xs shadow-none",
-                    filter === status && "bg-card"
-                  )}
-                  onClick={() => selectStatus(filter)}
-                >
-                  {filter === "ALL" ? "All" : filter}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
+            <Select
+              value={poDateFilter}
+              onValueChange={(value) => setPoDateFilter(value as keyof typeof poDateOptions)}
+            >
+              <SelectTrigger aria-label="Filter by PO date">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(poDateOptions).map(([value, option]) => (
+                  <SelectItem key={value} value={value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
+            <Select value={sort} onValueChange={(value) => setSort(value as keyof typeof sortOptions)}>
+              <SelectTrigger aria-label="Sort contracts">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(sortOptions).map(([value, option]) => (
+                  <SelectItem key={value} value={value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
+              <SelectTrigger aria-label="Results per page">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 rows</SelectItem>
+                <SelectItem value="25">25 rows</SelectItem>
+                <SelectItem value="50">50 rows</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+      </section>
+
+      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
         <Table>
           <TableHeader className="bg-muted/70">
             <TableRow className="hover:bg-muted/70">

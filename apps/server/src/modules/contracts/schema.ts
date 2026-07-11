@@ -8,10 +8,23 @@ export const contractRouteParamsSchema = organisationRouteParamsSchema.extend({
 
 export const contractListQuerySchema = z.object({
   status: z.enum(contractStatuses).optional(),
-  clientName: z.string().optional(),
-  contractId: z.string().optional(),
+  search: z.string().trim().min(1).max(120).optional(),
+  clientName: z.string().trim().min(1).max(120).optional(),
+  contractId: z.string().trim().min(1).max(120).optional(),
+  poDateFrom: z.string().date().optional(),
+  poDateTo: z.string().date().optional(),
+  sortBy: z.enum(["updatedAt", "poDate", "clientName", "contractNumber"]).optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
   page: z.coerce.number().int().positive().optional(),
   pageSize: z.coerce.number().int().positive().max(50).optional()
+}).superRefine((value, context) => {
+  if (value.poDateFrom && value.poDateTo && value.poDateFrom > value.poDateTo) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["poDateTo"],
+      message: "PO date end must be on or after the start date"
+    });
+  }
 });
 
 export const createContractRequestSchema = contractPayloadSchema;

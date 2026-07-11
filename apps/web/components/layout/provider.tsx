@@ -3,6 +3,7 @@
 import { listOrganisations } from "@/lib/api";
 import { queryKeys } from "@/lib/queries";
 import { subscribeToContractEvents } from "@/lib/realtime";
+import { useSession } from "@/components/session/provider";
 import type { OrganisationSummary } from "@contract-console/shared";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -29,6 +30,7 @@ const OrganisationContext = createContext<OrganisationContextValue | null>(null)
 
 export function OrganisationProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
+  const { account } = useSession();
   const [selectedOrganisationId, setSelectedOrganisationIdState] = useState<string | null>(null);
   const [realtimeState, setRealtimeState] = useState<RealtimeState>("disconnected");
 
@@ -37,7 +39,13 @@ export function OrganisationProvider({ children }: { children: ReactNode }) {
     queryFn: async () => (await listOrganisations()).data
   });
 
-  const organisations = organisationsQuery.data ?? [];
+  const organisations = useMemo(
+    () =>
+      (organisationsQuery.data ?? []).filter(
+        (organisation) => organisation.slug === account?.organisationSlug
+      ),
+    [account?.organisationSlug, organisationsQuery.data]
+  );
 
   useEffect(() => {
     if (selectedOrganisationId || organisations.length === 0) {

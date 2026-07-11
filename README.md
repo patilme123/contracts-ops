@@ -119,6 +119,8 @@ Implemented endpoints:
 
 ```text
 GET    /api/organisations
+GET    /api/organisations/:organisationId
+GET    /api/organisations/:organisationId/members
 GET    /api/organisations/:organisationId/contracts
 POST   /api/organisations/:organisationId/contracts
 GET    /api/organisations/:organisationId/contracts/stats
@@ -135,8 +137,11 @@ Search parameters:
 
 ```text
 status=DRAFT|FINALIZED|ARCHIVED
-clientName=partial text
-contractId=uuid or contract number
+search=partial client name, contract number, or UUID
+poDateFrom=YYYY-MM-DD
+poDateTo=YYYY-MM-DD
+sortBy=updatedAt|poDate|clientName|contractNumber
+sortOrder=asc|desc
 page=1
 pageSize=10
 ```
@@ -224,9 +229,9 @@ pnpm db:seed
 
 Use this flow to evaluate the required assignment behavior:
 
-1. Select an organisation from the top-right selector.
-2. Search/filter contracts by status, client name, or contract ID.
-3. Upload a valid contract JSON; it appears as `DRAFT`.
+1. Sign in with one of the local demo credentials and confirm the organisation workspace.
+2. Search/filter contracts by status, PO date, ordering, and page size.
+3. Upload the prefilled JSON, optionally edit it, and confirm it appears as `DRAFT`.
 4. Open a draft contract, edit JSON, and save it.
 5. Finalize the draft contract.
 6. Open another browser tab and confirm status changes refresh through SSE.
