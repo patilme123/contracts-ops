@@ -7,6 +7,11 @@ A multi-tenant contract management workspace built with Next.js, Express, Postgr
 - Web application: [contracts-ops-web.vercel.app](https://contracts-ops-web.vercel.app)
 - API health check: [contract-ops-api.up.railway.app/health](https://contract-ops-api.up.railway.app/health)
 
+## Evaluation Access
+
+Open the web application, select either prefilled demo profile, and click **Enter workspace**.
+No external account or additional credentials are required.
+
 ## Features
 
 - Organisation-scoped contract workspaces and team directory
