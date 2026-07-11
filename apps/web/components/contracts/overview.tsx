@@ -270,9 +270,7 @@ export function ContractsOverview() {
         <Table>
           <TableHeader className="bg-muted/70">
             <TableRow className="hover:bg-muted/70">
-              <TableHead>
-                <span className="border-b-2 border-primary pb-1">Contract</span>
-              </TableHead>
+              <TableHead>Contract</TableHead>
               <TableHead>Client</TableHead>
               <TableHead className="hidden md:table-cell">PO reference</TableHead>
               <TableHead className="hidden lg:table-cell">PO date</TableHead>
@@ -312,7 +310,7 @@ export function ContractsOverview() {
                   <TableCell>
                     <Link
                       href={`/contracts/${contract.id}`}
-                      className="font-semibold text-foreground hover:text-primary"
+                      className="font-semibold text-foreground hover:text-primary underline-offset-2 underline"
                     >
                       {contract.contractNumber}
                     </Link>
