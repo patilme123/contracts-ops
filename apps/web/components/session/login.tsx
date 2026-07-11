@@ -34,19 +34,16 @@ export function LoginScreen() {
     <main className="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6">
       <div className="grid w-full max-w-4xl overflow-hidden rounded-lg border border-border bg-card shadow-sm lg:grid-cols-[1.05fr_0.95fr]">
         <section className="border-b border-border bg-muted/45 p-6 sm:p-9 lg:border-b-0 lg:border-r">
-          <div className="flex size-10 items-center justify-center rounded-md bg-foreground text-background">
+          {/* <div className="flex size-10 items-center justify-center rounded-md bg-foreground text-background">
             <LockKeyhole className="size-5" />
-          </div>
-          <Badge variant="secondary" className="mt-7">
-            Demo workspace
-          </Badge>
+          </div> */}
           <h1 className="mt-3 text-2xl font-semibold text-foreground">Contract Console</h1>
           <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
             Select a seeded workspace account to review organisation-scoped contracts,
-            workflow status, and team information.
+            and workflow status.
           </p>
 
-          <div className="mt-7 space-y-3">
+          <div className="mt-2 space-y-3">
             {demoAccounts.map((account) => {
               const selected = account.email === email;
 
@@ -72,8 +69,9 @@ export function LoginScreen() {
                       <span className="block font-medium text-foreground">{account.name}</span>
                       <span className="mt-0.5 block text-xs text-muted-foreground">{account.role}</span>
                       <span className="mt-3 block text-xs text-muted-foreground">{account.email}</span>
-                      <span className="mt-1 block font-mono text-xs text-muted-foreground">
-                        {account.password}
+                      <span className="mt-1 block text-sm font-medium text-foreground font-mono">
+                        {(account.organisationSlug).split("-").map((part) => part[0].toUpperCase() + part.slice(1))
+                        .join(" ")}
                       </span>
                     </span>
                   </div>
@@ -119,11 +117,11 @@ export function LoginScreen() {
             </Button>
           </form>
 
-          <div className="mt-8 flex gap-3 border-t border-border pt-5 text-xs leading-5 text-muted-foreground">
+          {/* <div className="mt-8 flex gap-3 border-t border-border pt-5 text-xs leading-5 text-muted-foreground">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
             Demo credentials are local to this browser. Production access would use an
             identity provider and server-verified sessions.
-          </div>
+          </div> */}
         </section>
       </div>
     </main>
