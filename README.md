@@ -175,6 +175,7 @@ The Prisma schema, seed script, and exported Prisma client live in `packages/dat
 Core tables:
 
 - `organisations`
+- `organisation_members`
 - `contracts`
 - `contract_events`
 
@@ -267,7 +268,7 @@ Completed:
 - Next.js dashboard/detail/upload UI
 - Configured shadcn/ui component system and responsive operations layout
 - Neon migration and seed data
-- 18 backend API and workflow tests
+- 21 backend API and workflow tests
 
 Pending for final submission:
 
