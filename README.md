@@ -2,6 +2,11 @@
 
 A multi-tenant contract management workspace built with Next.js, Express, PostgreSQL, and Server-Sent Events.
 
+## Live
+
+- Web application: [contracts-ops-web.vercel.app](https://contracts-ops-web.vercel.app)
+- API health check: [contract-ops-api.up.railway.app/health](https://contract-ops-api.up.railway.app/health)
+
 ## Features
 
 - Organisation-scoped contract workspaces and team directory
