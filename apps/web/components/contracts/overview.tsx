@@ -270,18 +270,14 @@ export function ContractsOverview() {
         <Table>
           <TableHeader className="bg-muted/70">
             <TableRow className="hover:bg-muted/70">
-              <TableHead className="border-b-2 border-primary/30">Contract</TableHead>
-              <TableHead className="border-b-2 border-primary/30">Client</TableHead>
-              <TableHead className="hidden border-b-2 border-primary/30 md:table-cell">
-                PO reference
+              <TableHead>
+                <span className="border-b-2 border-primary pb-1">Contract</span>
               </TableHead>
-              <TableHead className="hidden border-b-2 border-primary/30 lg:table-cell">
-                PO date
-              </TableHead>
-              <TableHead className="border-b-2 border-primary/30">Status</TableHead>
-              <TableHead className="hidden border-b-2 border-primary/30 xl:table-cell">
-                Updated
-              </TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead className="hidden md:table-cell">PO reference</TableHead>
+              <TableHead className="hidden lg:table-cell">PO date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="hidden xl:table-cell">Updated</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
