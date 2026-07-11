@@ -196,17 +196,17 @@ export function ContractsOverview() {
 
       <section>
         <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(280px,1.6fr)_minmax(150px,0.8fr)_minmax(160px,0.9fr)_minmax(175px,1fr)_120px] xl:items-center">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                }}
-                placeholder="Search client, contract number, or ID"
-                className="pl-9"
-              />
-            </div>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+              }}
+              placeholder="Search client, contract number, or ID"
+              className="pl-9"
+            />
+          </div>
 
             <Select
               value={status}
@@ -263,19 +263,25 @@ export function ContractsOverview() {
                 <SelectItem value="50">50 rows</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+        </div>
       </section>
 
       <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
         <Table>
           <TableHeader className="bg-muted/70">
             <TableRow className="hover:bg-muted/70">
-              <TableHead>Contract</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead className="hidden md:table-cell">PO reference</TableHead>
-              <TableHead className="hidden lg:table-cell">PO date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden xl:table-cell">Updated</TableHead>
+              <TableHead className="border-b-2 border-primary/30">Contract</TableHead>
+              <TableHead className="border-b-2 border-primary/30">Client</TableHead>
+              <TableHead className="hidden border-b-2 border-primary/30 md:table-cell">
+                PO reference
+              </TableHead>
+              <TableHead className="hidden border-b-2 border-primary/30 lg:table-cell">
+                PO date
+              </TableHead>
+              <TableHead className="border-b-2 border-primary/30">Status</TableHead>
+              <TableHead className="hidden border-b-2 border-primary/30 xl:table-cell">
+                Updated
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

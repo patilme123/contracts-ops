@@ -72,7 +72,7 @@ export function OrganisationProvider({ children }: { children: ReactNode }) {
     return subscribeToContractEvents(selectedOrganisationId, {
       onOpen: () => setRealtimeState("connected"),
       onError: () => setRealtimeState("disconnected"),
-      onStatusChanged: (event) => {
+      onContractChanged: (event) => {
         queryClient.invalidateQueries({
           queryKey: ["contracts", selectedOrganisationId]
         });

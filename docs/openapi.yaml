@@ -226,7 +226,7 @@ paths:
                 $ref: "#/components/schemas/ContractEventsResponse"
   /organisations/{organisationId}/realtime/contracts:
     get:
-      summary: Subscribe to contract status updates over SSE
+      summary: Subscribe to contract activity updates over SSE
       parameters:
         - $ref: "#/components/parameters/OrganisationId"
       responses:

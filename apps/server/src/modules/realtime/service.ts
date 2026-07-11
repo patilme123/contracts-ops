@@ -1,4 +1,4 @@
-import type { ContractStatusChangedEvent } from "@contract-console/shared";
+import type { ContractRealtimeEvent } from "@contract-console/shared";
 import type { Response } from "express";
 
 const HEARTBEAT_INTERVAL_MS = 25_000;
@@ -52,7 +52,7 @@ export const contractStatusStreamService = {
     };
   },
 
-  publish(event: ContractStatusChangedEvent) {
+  publish(event: ContractRealtimeEvent) {
     const organisationClients = clientsByOrganisation.get(event.organisationId);
 
     if (!organisationClients) {
@@ -60,7 +60,7 @@ export const contractStatusStreamService = {
     }
 
     for (const client of organisationClients) {
-      writeEvent(client.response, "contract-status-changed", event);
+      writeEvent(client.response, "contract-changed", event);
     }
   }
 };

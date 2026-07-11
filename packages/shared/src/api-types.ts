@@ -80,8 +80,12 @@ export type ContractEvent = {
   createdAt: string;
 };
 
-export type ContractStatusChangedEvent = {
-  type: "CONTRACT_STATUS_CHANGED";
+export type ContractRealtimeEvent = {
+  type:
+    | "CONTRACT_CREATED"
+    | "CONTRACT_UPDATED"
+    | "CONTRACT_STATUS_CHANGED"
+    | "CONTRACT_DELETED";
   organisationId: string;
   contractId: string;
   contractNumber: string;

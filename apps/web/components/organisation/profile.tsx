@@ -2,13 +2,12 @@
 
 import { useOrganisationContext } from "@/components/layout/provider";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getOrganisation, listOrganisationMembers } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { queryKeys } from "@/lib/queries";
 import type { OrganisationMember } from "@contract-console/shared";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, CalendarDays, Globe2, Users } from "lucide-react";
+import { Building2, CalendarDays, Globe2, Mail, Users } from "lucide-react";
 
 function initials(name: string) {
   return name
@@ -77,81 +76,79 @@ export function OrganisationProfile() {
     <div className="space-y-7">
       <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-1 text-sm font-medium text-primary">Workspace settings</p>
-          <h1 className="text-[28px] font-semibold leading-tight text-foreground">Organisation</h1>
+          <p className="mb-1 text-sm font-medium text-primary">Organisation workspace</p>
+          <h1 className="text-[28px] font-semibold leading-tight text-foreground">
+            {profile.name}
+          </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Organisation information and the people who support its contract operations.
+            Manage contract operations with the team assigned to this workspace.
           </p>
         </div>
         <Badge variant="secondary" className="w-fit">
-          {profile.memberCount} team members
+          {profile.memberCount} members
         </Badge>
       </div>
 
       <section className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
-        <Card>
-          <CardHeader className="border-b border-border">
-            <div className="flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                <Building2 className="size-5" />
-              </span>
-              <div>
-                <CardTitle>{profile.name}</CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">{profile.slug}</p>
-              </div>
+        <div className="rounded-lg border border-border bg-card p-5 shadow-sm sm:p-6">
+          <div className="flex items-start gap-4">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Building2 className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">Organisation profile</p>
+              <p className="mt-1 text-sm text-muted-foreground">{profile.slug}</p>
             </div>
-          </CardHeader>
-          <CardContent className="pt-5">
-            <p className="text-sm leading-6 text-muted-foreground">
-              {profile.description ?? "No organisation description has been added."}
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+          <p className="mt-6 max-w-2xl text-sm leading-6 text-muted-foreground">
+            {profile.description ?? "No organisation description has been added."}
+          </p>
+        </div>
 
-        <Card>
-          <CardHeader className="border-b border-border">
-            <CardTitle>Workspace details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-5 text-sm">
-            <div className="flex items-center gap-3">
-              <Globe2 className="size-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Timezone</span>
-              <span className="ml-auto font-medium text-foreground">{profile.timezone}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <CalendarDays className="size-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Workspace created</span>
-              <span className="ml-auto font-medium text-foreground">
-                {formatDate(profile.createdAt)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+        <dl className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="flex items-center gap-3 px-5 py-4 text-sm">
+            <Globe2 className="size-4 text-primary" />
+            <dt className="text-muted-foreground">Timezone</dt>
+            <dd className="ml-auto font-medium text-foreground">{profile.timezone}</dd>
+          </div>
+          <div className="flex items-center gap-3 px-5 py-4 text-sm">
+            <CalendarDays className="size-4 text-primary" />
+            <dt className="text-muted-foreground">Workspace created</dt>
+            <dd className="ml-auto font-medium text-foreground">
+              {formatDate(profile.createdAt)}
+            </dd>
+          </div>
+        </dl>
       </section>
 
-      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+      <section>
+        <div className="flex items-center justify-between border-b border-border pb-4">
           <div className="flex items-center gap-2">
             <Users className="size-4 text-primary" />
-            <h2 className="text-sm font-semibold text-foreground">Team</h2>
+            <h2 className="text-sm font-semibold text-foreground">Team members</h2>
           </div>
           <span className="text-sm text-muted-foreground">{members.length} people</span>
         </div>
-        <div className="grid divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0">
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {members.map((member) => (
-            <div key={member.id} className="flex items-center gap-3 p-5">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
-                {initials(member.name)}
-              </span>
-              <div className="min-w-0">
-                <p className="truncate font-medium text-foreground">{member.name}</p>
-                <p className="mt-0.5 truncate text-sm text-muted-foreground">{member.title}</p>
-                <p className="mt-2 truncate text-xs text-muted-foreground">{member.email}</p>
+            <article key={member.id} className="rounded-lg border border-border bg-card p-5 shadow-sm">
+              <div className="flex items-start gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
+                  {initials(member.name)}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-foreground">{member.name}</p>
+                  <p className="mt-0.5 truncate text-sm text-muted-foreground">{member.title}</p>
+                </div>
               </div>
-              <Badge variant="secondary" className="ml-auto hidden shrink-0 lg:inline-flex">
+              <Badge variant="secondary" className="mt-5">
                 {roleLabel(member.role)}
               </Badge>
-            </div>
+              <p className="mt-4 flex min-w-0 items-center gap-2 border-t border-border pt-4 text-xs text-muted-foreground">
+                <Mail className="size-3.5 shrink-0" />
+                <span className="truncate">{member.email}</span>
+              </p>
+            </article>
           ))}
         </div>
       </section>

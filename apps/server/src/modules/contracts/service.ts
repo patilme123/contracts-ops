@@ -38,7 +38,7 @@ export const contractService = {
   async createDraft(organisationId: string, input: unknown) {
     const payload = contractPayloadSchema.parse(input);
 
-    return prisma.$transaction(async (transaction) => {
+    const contract = await prisma.$transaction(async (transaction) => {
       requireOrganisation(await organisationRepository.findById(organisationId, transaction));
 
       const contractNumber = await contractRepository.getNextNumber(
@@ -66,6 +66,17 @@ export const contractService = {
 
       return contract;
     });
+
+    contractStatusStreamService.publish({
+      type: "CONTRACT_CREATED",
+      organisationId,
+      contractId: contract.id,
+      contractNumber: contract.contractNumber,
+      status: ContractStatus.DRAFT,
+      updatedAt: contract.updatedAt
+    });
+
+    return contract;
   },
 
   async getByReference(organisationId: string, contractReference: string) {
@@ -77,7 +88,7 @@ export const contractService = {
   async updateDraft(organisationId: string, contractReference: string, input: unknown) {
     const payload: ContractPayload = contractPayloadSchema.parse(input);
 
-    return prisma.$transaction(async (transaction) => {
+    const contract = await prisma.$transaction(async (transaction) => {
       const existingContract = requireContract(
         await contractRepository.findRecordByReference(
           organisationId,
@@ -112,6 +123,17 @@ export const contractService = {
 
       return contract;
     });
+
+    contractStatusStreamService.publish({
+      type: "CONTRACT_UPDATED",
+      organisationId,
+      contractId: contract.id,
+      contractNumber: contract.contractNumber,
+      status: ContractStatus.DRAFT,
+      updatedAt: contract.updatedAt
+    });
+
+    return contract;
   },
 
   async finalize(organisationId: string, contractReference: string) {
@@ -213,7 +235,7 @@ export const contractService = {
   },
 
   async deleteDraft(organisationId: string, contractReference: string) {
-    await prisma.$transaction(async (transaction) => {
+    const contract = await prisma.$transaction(async (transaction) => {
       const existingContract = requireContract(
         await contractRepository.findRecordByReference(
           organisationId,
@@ -223,7 +245,10 @@ export const contractService = {
       );
 
       assertDraftContract(existingContract.status);
-      await contractRepository.softDelete(existingContract.id, transaction);
+      const deletedContract = await contractRepository.softDelete(
+        existingContract.id,
+        transaction
+      );
 
       await contractEventRepository.create(
         {
@@ -236,6 +261,17 @@ export const contractService = {
         },
         transaction
       );
+
+      return deletedContract;
+    });
+
+    contractStatusStreamService.publish({
+      type: "CONTRACT_DELETED",
+      organisationId,
+      contractId: contract.id,
+      contractNumber: contract.contractNumber,
+      status: ContractStatus.DRAFT,
+      updatedAt: contract.updatedAt.toISOString()
     });
   }
 };
