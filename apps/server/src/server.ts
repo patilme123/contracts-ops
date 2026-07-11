@@ -4,8 +4,13 @@ import { environment } from "./config/environment";
 
 const app = createApp();
 
-const server = app.listen(environment.PORT, () => {
-  console.log(`Contract console server listening on port ${environment.PORT}`);
+const server = app.listen(environment.PORT, "0.0.0.0", () => {
+  console.log(`Contract console server listening on 0.0.0.0:${environment.PORT}`);
+});
+
+server.on("error", (error) => {
+  console.error("Unable to start contract console server", error);
+  process.exit(1);
 });
 
 async function shutdown(signal: string) {
