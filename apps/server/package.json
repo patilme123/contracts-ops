@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "pnpm --filter @contract-console/database build && tsc -p tsconfig.json",
+    "build": "pnpm --filter @contract-console/shared build && pnpm --filter @contract-console/database build && tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",

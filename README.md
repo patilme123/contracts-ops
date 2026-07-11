@@ -115,3 +115,5 @@ After the API is deployed, apply database migrations and seed data:
 pnpm db:deploy
 pnpm db:seed
 ```
+
+Railway uses the repository-level `railway.json`; no additional build command is needed in the Railway dashboard.

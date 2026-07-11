@@ -2,7 +2,7 @@
   "name": "contract-operations-console",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@11.7.0",
+  "packageManager": "pnpm@9.15.5",
   "scripts": {
     "build": "pnpm --filter @contract-console/shared build && pnpm --filter @contract-console/database build && pnpm --filter @contract-console/server build && pnpm --filter @contract-console/web build",
     "db:deploy": "prisma migrate deploy --schema packages/database/prisma/schema.prisma",
