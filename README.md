@@ -58,6 +58,13 @@ pnpm db:seed
 pnpm dev
 ```
 
+To restore the original demo organisations, members, and contracts:
+
+```bash
+pnpm db:reset
+pnpm db:seed
+```
+
 - Web app: `http://localhost:3000`
 - API health check: `http://localhost:4000/health`
 
@@ -120,7 +127,3 @@ After the API is deployed, apply database migrations and seed data:
 pnpm db:deploy
 pnpm db:seed
 ```
-
-Railway uses the repository-level `railway.json`; no additional build command is needed in the Railway dashboard.
-Do not set `PORT` manually on Railway; Railway injects the port used by its health check.
-The included `nixpacks.toml` installs build-time development dependencies before compiling the API.

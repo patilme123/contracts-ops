@@ -8,6 +8,7 @@
     "db:deploy": "prisma migrate deploy --schema packages/database/prisma/schema.prisma",
     "db:generate": "prisma generate --schema packages/database/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema packages/database/prisma/schema.prisma",
+    "db:reset": "tsx packages/database/prisma/reset.ts",
     "db:seed": "tsx packages/database/prisma/seed.ts",
     "dev": "pnpm --parallel --filter @contract-console/server --filter @contract-console/web dev",
     "lint": "pnpm -r lint",
